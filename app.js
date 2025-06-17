@@ -7,33 +7,36 @@ const routes = {
 
 const basePath = "/e621tools";
 
-/**
- * Handles navigation to a new path.
- * @param {string} path - The path to navigate to (e.g., '/tools/mass-favorite').
- */
 const navigateTo = (path) => {
   history.pushState(null, null, basePath + path);
   router();
 };
 
-/**
- * The main router function that loads and renders the correct view.
- */
 const router = async () => {
+  const redirectPath = sessionStorage.getItem("redirectPath");
+  if (redirectPath) {
+    sessionStorage.removeItem("redirectPath");
+    navigateTo(
+      redirectPath.startsWith(basePath)
+        ? redirectPath.substring(basePath.length)
+        : redirectPath
+    );
+    return;
+  }
+
   const path = location.pathname.startsWith(basePath)
     ? location.pathname.substring(basePath.length)
     : location.pathname;
 
   const finalPath = path === "" ? "/" : path;
-
   const componentPath = routes[finalPath];
+
   if (!componentPath) {
     appContainer.innerHTML = `<div class="text-center p-8 text-red-400"><h1>404 Not Found</h1><p>The page you are looking for does not exist.</p><a href="/" data-link class="text-cyan-400 mt-4 inline-block">Go to Hub</a></div>`;
     return;
   }
 
   appContainer.classList.add("content-exit-active");
-
   await new Promise((resolve) => setTimeout(resolve, 400));
 
   try {
@@ -42,9 +45,7 @@ const router = async () => {
     if (module.render && module.afterRender) {
       appContainer.classList.remove("content-exit-active");
       appContainer.innerHTML = module.render();
-
       module.afterRender();
-
       appContainer.classList.add("content-enter-active");
     } else {
       throw new Error(
@@ -66,9 +67,10 @@ window.addEventListener("popstate", router);
 
 document.addEventListener("DOMContentLoaded", () => {
   document.body.addEventListener("click", (e) => {
-    if (e.target.matches("[data-link]")) {
+    const link = e.target.closest("[data-link]");
+    if (link) {
       e.preventDefault();
-      navigateTo(e.target.getAttribute("href"));
+      navigateTo(link.getAttribute("href"));
     }
   });
 
