@@ -34,9 +34,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let fetchedPosts = [];
   const DEFAULT_BLACKLIST = ["loli", "shota", "cub"];
 
-  /**
-   * Loads saved credentials from localStorage.
-   */
   function loadCredentials() {
     const savedUsername = localStorage.getItem("e621Username");
     const savedApiKey = localStorage.getItem("e621ApiKey");
@@ -49,18 +46,26 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  /**
-   * Saves credentials to localStorage.
-   */
   function saveCredentials() {
     localStorage.setItem("e621Username", usernameInput.value);
     localStorage.setItem("e621ApiKey", apiKeyInput.value);
   }
 
-  function logMessage(message, isError = false) {
+  function logMessage(message, level = "info") {
     const p = document.createElement("p");
     p.textContent = message;
-    p.className = isError ? "text-red-400" : "text-gray-300";
+
+    switch (level) {
+      case "error":
+        p.className = "text-red-400";
+        break;
+      case "warn":
+        p.className = "text-yellow-400";
+        break;
+      default:
+        p.className = "text-gray-300";
+    }
+
     logDiv.appendChild(p);
     logDiv.scrollTop = logDiv.scrollHeight;
   }
@@ -74,7 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const apiKey = apiKeyInput.value;
 
     if (!username || !apiKey) {
-      logMessage("Username and API Key are required.", true);
+      logMessage("Username and API Key are required.", "error");
       return null;
     }
 
@@ -107,7 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       return await response.json();
     } catch (error) {
-      logMessage(`API Request Failed: ${error.message}`, true);
+      logMessage(`API Request Failed: ${error.message}`, "error");
       console.error("API Request Error:", error);
       return null;
     }
@@ -134,7 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function fetchPosts() {
     const tags = tagsInput.value.trim();
     if (!tags) {
-      logMessage("Please enter tags to search for.", true);
+      logMessage("Please enter tags to search for.", "error");
       return;
     }
 
@@ -149,7 +154,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateProgress(0);
 
     const fullTagString = buildTagString();
-    logMessage(`Requesting with tags: ${fullTagString}`, false);
+    logMessage(`Requesting with tags: ${fullTagString}`);
 
     const data = await apiRequest(
       `posts.json?tags=${encodeURIComponent(fullTagString)}&limit=320`
@@ -164,7 +169,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       logMessage(
         "Failed to fetch posts or no posts were found for those tags and blacklists.",
-        true
+        "error"
       );
     }
 
@@ -175,13 +180,14 @@ document.addEventListener("DOMContentLoaded", () => {
   function displayPosts(posts, container) {
     container.innerHTML = "";
     posts.forEach((post) => {
-      if (!post.preview.url) return;
+      const imageUrl = post.sample.has ? post.sample.url : post.preview.url;
+      if (!imageUrl) return;
 
       const itemDiv = document.createElement("div");
       itemDiv.className = "flex flex-col items-center";
 
       const img = document.createElement("img");
-      img.src = post.preview.url;
+      img.src = imageUrl;
       img.alt = `Post ${post.id}`;
       img.title = `Post ID: ${post.id}\nTags: ${post.tags.general.join(" ")}`;
       img.className =
@@ -207,26 +213,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let successCount = 0;
     let failCount = 0;
+    let skipCount = 0;
     let favoritedPosts = [];
 
     for (const [index, post] of fetchedPosts.entries()) {
-      const endpoint = `favorites.json?post_id=${post.id}`;
-      const result = await apiRequest(endpoint, {
-        method: "POST",
-      });
-
-      if (result && (result.success || result.post_id)) {
-        logMessage(
-          `Favorited post ${post.id}. (${index + 1}/${fetchedPosts.length})`
-        );
-        successCount++;
-        favoritedPosts.push(post);
+      if (post.is_favorited) {
+        logMessage(`Skipping post ${post.id}, already in favorites.`, "warn");
+        skipCount++;
       } else {
-        logMessage(
-          `Failed to favorite post ${post.id}. It might already be in your favorites.`,
-          true
-        );
-        failCount++;
+        const endpoint = `favorites.json?post_id=${post.id}`;
+        const result = await apiRequest(endpoint, {
+          method: "POST",
+        });
+
+        if (result && (result.success || result.post_id)) {
+          logMessage(`Favorited post ${post.id}.`);
+          successCount++;
+          favoritedPosts.push(post);
+        } else {
+          logMessage(`Failed to favorite post ${post.id}.`, "error");
+          failCount++;
+        }
       }
 
       updateProgress(((index + 1) / fetchedPosts.length) * 100);
@@ -234,7 +241,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     logMessage(
-      `Finished. Successfully favorited: ${successCount}. Failed: ${failCount}.`
+      `Finished. Success: ${successCount}. Skipped: ${skipCount}. Failed: ${failCount}.`
     );
     startFavoriteProcessBtn.disabled = false;
 
@@ -245,7 +252,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function openModal() {
-    modalText.textContent = `You are about to favorite ${fetchedPosts.length} posts with the tags "${tagsInput.value}". Are you sure?`;
+    const postsToFavorite = fetchedPosts.filter((p) => !p.is_favorited).length;
+    modalText.textContent = `You are about to favorite ${postsToFavorite} new posts from your search. Are you sure?`;
     modal.classList.remove("pointer-events-none", "opacity-0");
     document.body.classList.add("modal-active");
   }
@@ -256,7 +264,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   loadCredentials();
-
   usernameInput.addEventListener("input", saveCredentials);
   apiKeyInput.addEventListener("input", saveCredentials);
 
@@ -270,7 +277,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (fetchedPosts.length > 0) {
       openModal();
     } else {
-      logMessage("No posts to favorite. Please fetch posts first.", true);
+      logMessage("No posts to favorite. Please fetch posts first.", "error");
     }
   });
 
