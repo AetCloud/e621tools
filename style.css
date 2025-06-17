@@ -1,5 +1,6 @@
 body {
   font-family: "Inter", sans-serif;
+  overflow-x: hidden;
 }
 
 .tool-card {
@@ -14,4 +15,54 @@ body {
 .tool-card-disabled {
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+@keyframes contentFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes contentFadeOut {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
+.content-enter-active {
+  animation: contentFadeIn 0.4s ease-out forwards;
+}
+
+.content-exit-active {
+  animation: contentFadeOut 0.4s ease-out forwards;
+}
+
+.modal {
+  transition: opacity 0.25s ease;
+}
+.modal-active {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+summary::marker {
+  color: #22d3ee;
+}
+#current-preview-image {
+  transition: opacity 0.5s ease-in-out;
+}
+.preview-image {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  object-position: center;
 }
