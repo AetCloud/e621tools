@@ -4,7 +4,7 @@ export const render = () => {
   return `
     <div class="container mx-auto p-4 md:p-8">
         <div class="mb-8">
-            <a href="/" data-link class="text-cyan-400 hover:text-cyan-300">&larr; Back to the hub</a>
+            <a href="/" data-link class="text-cyan-400 hover:text-cyan-300">&larr; Back to Tool Hub</a>
         </div>
 
         <div class="bg-gray-800 rounded-2xl p-6 md:p-8 shadow-2xl">
@@ -23,7 +23,7 @@ export const render = () => {
                         <details>
                             <summary class="cursor-pointer hover:text-white select-none list-none group">
                                 <div class="flex items-center">
-                                    <svg class="arrow w-4 h-4 mr-1 transition-transform duration-300 group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                    <svg class="w-4 h-4 mr-1 transition-transform duration-300 group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                                     How do I get my API Key?
                                 </div>
                             </summary>
@@ -51,9 +51,9 @@ export const render = () => {
                     <input type="text" id="tags" class="w-full bg-gray-700 border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none" placeholder="canine score:>50 order:score">
                 </div>
                 <div>
-                    <label for="blacklist-input" class="block text-sm font-medium text-gray-300 mb-2">Personal Blacklist</label>
+                    <label for="blacklist-input" class="block text-sm font-medium text-gray-300 mb-2">Add to Personal Blacklist</label>
                     <div class="flex">
-                        <input type="text" id="blacklist-input" class="w-full bg-gray-700 border-gray-600 rounded-l-lg p-3 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none" placeholder="Add to blacklist (e.g., gore)">
+                        <input type="text" id="blacklist-input" class="w-full bg-gray-700 border-gray-600 rounded-l-lg p-3 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none" placeholder="e.g., my_little_pony">
                         <button id="add-blacklist-btn" class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-4 rounded-r-lg transition-colors duration-300">Add</button>
                     </div>
                     <div id="blacklist-tags-container" class="mt-3 flex flex-wrap gap-2">
@@ -343,30 +343,48 @@ export const afterRender = () => {
     fetchPostsBtn.textContent = "Fetch Posts";
   }
 
+  function createPostPreviewElement(post) {
+    const imageUrl = post.sample.has ? post.sample.url : post.preview.url;
+    if (!imageUrl) return null;
+
+    const link = document.createElement("a");
+    link.href = `https://e621.net/posts/${post.id}`;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+
+    const itemDiv = document.createElement("div");
+    itemDiv.className = "flex flex-col items-center";
+
+    const img = document.createElement("img");
+    img.src = imageUrl;
+    img.alt = `Post ${post.id}`;
+    img.title = `Post ID: ${post.id}\nTags: ${post.tags.general.join(" ")}`;
+    img.className = "preview-image w-full bg-gray-700 rounded-lg shadow-lg";
+    img.onerror = () => {
+      img.src = "https://placehold.co/150x150/000000/FFFFFF?text=Error";
+    };
+
+    const idText = document.createElement("p");
+    idText.className = "text-xs text-gray-400 mt-1";
+    idText.textContent = `ID: ${post.id}`;
+
+    link.appendChild(img);
+    itemDiv.appendChild(link);
+    itemDiv.appendChild(idText);
+
+    return itemDiv;
+  }
+
   function displayFetchedPosts() {
     const postsToRender = fetchedPosts.slice(
       displayedPostCount,
       displayedPostCount + POSTS_PER_PAGE
     );
     postsToRender.forEach((post) => {
-      const imageUrl = post.sample.has ? post.sample.url : post.preview.url;
-      if (!imageUrl) return;
-      const itemDiv = document.createElement("div");
-      itemDiv.className = "flex flex-col items-center";
-      const img = document.createElement("img");
-      img.src = imageUrl;
-      img.alt = `Post ${post.id}`;
-      img.title = `Post ID: ${post.id}\nTags: ${post.tags.general.join(" ")}`;
-      img.className = "preview-image w-full bg-gray-700 rounded-lg shadow-lg";
-      img.onerror = () => {
-        img.src = "https://placehold.co/150x150/000000/FFFFFF?text=Error";
-      };
-      const idText = document.createElement("p");
-      idText.className = "text-xs text-gray-400 mt-1";
-      idText.textContent = `ID: ${post.id}`;
-      itemDiv.appendChild(img);
-      itemDiv.appendChild(idText);
-      postsContainer.appendChild(itemDiv);
+      const postElement = createPostPreviewElement(post);
+      if (postElement) {
+        postsContainer.appendChild(postElement);
+      }
     });
     displayedPostCount += postsToRender.length;
     if (displayedPostCount < fetchedPosts.length) {
@@ -379,24 +397,10 @@ export const afterRender = () => {
   function displayHistoryPosts(posts, container) {
     container.innerHTML = "";
     posts.forEach((post) => {
-      const imageUrl = post.sample.has ? post.sample.url : post.preview.url;
-      if (!imageUrl) return;
-      const itemDiv = document.createElement("div");
-      itemDiv.className = "flex flex-col items-center";
-      const img = document.createElement("img");
-      img.src = imageUrl;
-      img.alt = `Post ${post.id}`;
-      img.title = `Post ID: ${post.id}\nTags: ${post.tags.general.join(" ")}`;
-      img.className = "preview-image w-full bg-gray-700 rounded-lg shadow-lg";
-      img.onerror = () => {
-        img.src = "https://placehold.co/150x150/000000/FFFFFF?text=Error";
-      };
-      const idText = document.createElement("p");
-      idText.className = "text-xs text-gray-400 mt-1";
-      idText.textContent = `ID: ${post.id}`;
-      itemDiv.appendChild(img);
-      itemDiv.appendChild(idText);
-      container.appendChild(itemDiv);
+      const postElement = createPostPreviewElement(post);
+      if (postElement) {
+        container.appendChild(postElement);
+      }
     });
   }
 
