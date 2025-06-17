@@ -35,10 +35,28 @@ document.addEventListener("DOMContentLoaded", () => {
   const DEFAULT_BLACKLIST = ["loli", "shota", "cub"];
 
   /**
-   * Appends a message to the log container.
-   * @param {string} message - The message to log.
-   * @param {boolean} [isError=false] - If true, the message will be styled as an error.
+   * Loads saved credentials from localStorage.
    */
+  function loadCredentials() {
+    const savedUsername = localStorage.getItem("e621Username");
+    const savedApiKey = localStorage.getItem("e621ApiKey");
+
+    if (savedUsername) {
+      usernameInput.value = savedUsername;
+    }
+    if (savedApiKey) {
+      apiKeyInput.value = savedApiKey;
+    }
+  }
+
+  /**
+   * Saves credentials to localStorage.
+   */
+  function saveCredentials() {
+    localStorage.setItem("e621Username", usernameInput.value);
+    localStorage.setItem("e621ApiKey", apiKeyInput.value);
+  }
+
   function logMessage(message, isError = false) {
     const p = document.createElement("p");
     p.textContent = message;
@@ -47,20 +65,10 @@ document.addEventListener("DOMContentLoaded", () => {
     logDiv.scrollTop = logDiv.scrollHeight;
   }
 
-  /**
-   * Updates the progress bar's width.
-   * @param {number} percentage - The percentage to set the progress bar to (0-100).
-   */
   function updateProgress(percentage) {
     progressBar.style.width = `${percentage}%`;
   }
 
-  /**
-   * Performs a request to the e621 API.
-   * @param {string} endpoint - The API endpoint to hit (e.g., 'posts.json').
-   * @param {object} [options={}] - The options for the fetch request.
-   * @returns {Promise<object|null>} - The JSON response from the API, or null if an error occurred.
-   */
   async function apiRequest(endpoint, options = {}) {
     const username = usernameInput.value;
     const apiKey = apiKeyInput.value;
@@ -75,14 +83,12 @@ document.addEventListener("DOMContentLoaded", () => {
       Authorization: "Basic " + btoa(`${username}:${apiKey}`),
     };
 
-    if (options.method === "POST") {
-      headers["Content-Type"] = "application/json";
-    }
-
     const url = `https://e621.net/${endpoint}`;
 
     try {
-      const response = await fetch(url, { ...options, headers });
+      const { body, ...fetchOptions } = options;
+      const response = await fetch(url, { ...fetchOptions, headers });
+
       if (!response.ok) {
         const errorData = await response
           .json()
@@ -93,18 +99,20 @@ document.addEventListener("DOMContentLoaded", () => {
           }`
         );
       }
-      if (response.status === 204) return { success: true };
+      if (
+        response.status === 204 ||
+        response.headers.get("content-length") === "0"
+      ) {
+        return { success: true };
+      }
       return await response.json();
     } catch (error) {
       logMessage(`API Request Failed: ${error.message}`, true);
+      console.error("API Request Error:", error);
       return null;
     }
   }
 
-  /**
-   * Builds the final tag string including blacklisted tags.
-   * @returns {string} The complete tag string for the API request.
-   */
   function buildTagString() {
     let finalTags = tagsInput.value.trim();
 
@@ -123,9 +131,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return finalTags;
   }
 
-  /**
-   * Fetches posts from the API based on the user's tags and blacklists.
-   */
   async function fetchPosts() {
     const tags = tagsInput.value.trim();
     if (!tags) {
@@ -167,11 +172,6 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchPostsBtn.textContent = "Fetch Posts";
   }
 
-  /**
-   * Displays thumbnails for a list of posts in a given container.
-   * @param {Array} posts - The array of post objects to display.
-   * @param {HTMLElement} container - The container element to append the images to.
-   */
   function displayPosts(posts, container) {
     container.innerHTML = "";
     posts.forEach((post) => {
@@ -200,9 +200,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  /**
-   * Iterates through the fetched posts and favorites each one.
-   */
   async function massFavorite() {
     logMessage(`Starting to favorite ${fetchedPosts.length} posts...`);
     startFavoriteProcessBtn.disabled = true;
@@ -213,9 +210,9 @@ document.addEventListener("DOMContentLoaded", () => {
     let favoritedPosts = [];
 
     for (const [index, post] of fetchedPosts.entries()) {
-      const result = await apiRequest("favorites.json", {
+      const endpoint = `favorites.json?post_id=${post.id}`;
+      const result = await apiRequest(endpoint, {
         method: "POST",
-        body: JSON.stringify({ post_id: post.id }),
       });
 
       if (result && (result.success || result.post_id)) {
@@ -257,6 +254,11 @@ document.addEventListener("DOMContentLoaded", () => {
     modal.classList.add("pointer-events-none", "opacity-0");
     document.body.classList.remove("modal-active");
   }
+
+  loadCredentials();
+
+  usernameInput.addEventListener("input", saveCredentials);
+  apiKeyInput.addEventListener("input", saveCredentials);
 
   modalConfirmBtn.addEventListener("click", () => {
     closeModal();

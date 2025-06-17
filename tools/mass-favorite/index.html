@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mass Favorite Tool - Napp's e621 Tools</title>
+    <title>Napp's e621 Tools</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
@@ -18,12 +18,15 @@
         overflow-x: hidden;
         overflow-y: auto;
       }
+      summary::marker {
+        color: #22d3ee;
+      }
     </style>
   </head>
   <body class="bg-gray-900 text-white">
     <div class="container mx-auto p-4 md:p-8">
       <div class="mb-8">
-        <a href="../.." class="text-cyan-400 hover:text-cyan-300"
+        <a href="../../" class="text-cyan-400 hover:text-cyan-300"
           >&larr; Back to Tool Hub</a
         >
       </div>
@@ -62,6 +65,33 @@
               class="w-full bg-gray-700 border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none"
               placeholder="Your e621 API key"
             />
+            <div class="mt-2">
+              <details class="text-sm text-gray-400">
+                <summary class="cursor-pointer hover:text-white select-none">
+                  How do I get my API Key?
+                </summary>
+                <div
+                  class="mt-2 p-4 bg-gray-900 rounded-lg border border-gray-700"
+                >
+                  <ol class="list-decimal list-inside space-y-2">
+                    <li>Log in to your e621 account.</li>
+                    <li>
+                      Click your <strong>username</strong> in the top right,
+                      then select <strong>"Account"</strong>.
+                    </li>
+                    <li>
+                      In the account sidebar on the left, click on
+                      <strong>"Manage API Access"</strong>.
+                    </li>
+                    <li>Click the <strong>"Create"</strong> button.</li>
+                    <li>
+                      Your API Key is the long string of characters shown. Copy
+                      the entire key and paste it in the field above.
+                    </li>
+                  </ol>
+                </div>
+              </details>
+            </div>
           </div>
         </div>
 
