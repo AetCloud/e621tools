@@ -3,6 +3,7 @@ const appContainer = document.getElementById("app-container");
 const routes = {
   "/": "./components/hub.js",
   "/tools/mass-favorite": "./components/mass-favorite.js",
+  "/tools/mass-downloader": "./components/mass-downloader.js",
 };
 
 const basePath = "/e621tools";

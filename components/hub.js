@@ -1,3 +1,5 @@
+import { apiRequest } from "../lib/api.js";
+
 export const render = () => {
   return `
     <div class="container mx-auto p-4 md:p-8">
@@ -14,10 +16,10 @@ export const render = () => {
                     <p class="text-gray-400">Favorite posts in bulk based on a tag search.</p>
                 </a>
 
-                <div class="tool-card-disabled bg-gray-800 rounded-2xl p-6 shadow-2xl">
-                    <h2 class="text-2xl font-bold text-gray-600 mb-2">Mass Downloader Tool</h2>
-                    <p class="text-gray-500">Download posts in bulk based on a tag search. (Coming Soon)</p>
-                </div>
+                <a href="/tools/mass-downloader" data-link class="tool-card bg-gray-800 rounded-2xl p-6 shadow-2xl transition-transform transform hover:scale-105">
+                    <h2 class="text-2xl font-bold text-cyan-500 mb-2">Mass Downloader</h2>
+                    <p class="text-gray-400">Download posts in bulk based on a tag search.</p>
+                </a>
 
                 <div class="tool-card-disabled bg-gray-800 rounded-2xl p-6 shadow-2xl">
                     <h2 class="text-2xl font-bold text-gray-600 mb-2">Tag Explorer</h2>
