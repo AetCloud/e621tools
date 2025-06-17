@@ -43,9 +43,15 @@ export const render = () => {
                 <label for="useDefaultBlacklist" class="ml-2 block text-sm text-gray-300">Use default e621 blacklist</label>
             </div>
 
-            <button id="startDownloadProcess" class="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300">
-                Download Posts
+            <button id="fetchPosts" class="w-full mt-2 bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300">
+                Fetch Posts for Download
             </button>
+
+            <div id="action-button-container" class="hidden mt-6">
+                <button id="startDownloadProcess" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300" disabled>
+                    Download All Fetched Posts
+                </button>
+            </div>
 
             <div id="progress-section" class="hidden mt-6 text-center p-4 bg-gray-700/50 rounded-lg">
                 <p id="progress-text" class="text-lg font-semibold text-gray-300 mb-2">Preparing to download...</p>
@@ -54,9 +60,38 @@ export const render = () => {
                 </div>
             </div>
             
-            <div id="log-section" class="mt-6 hidden">
-                <h2 class="text-xl font-semibold mb-2 text-gray-300">Log</h2>
-                <div id="log" class="w-full h-48 bg-gray-900 rounded-lg p-3 overflow-y-auto border border-gray-700"></div>
+            <div id="log-section" class="hidden mt-6 animated-dropdown">
+                <div>
+                    <h2 class="text-xl font-semibold mb-2 text-gray-300">Log</h2>
+                    <div id="log" class="w-full h-48 bg-gray-900 rounded-lg p-3 overflow-y-auto border border-gray-700"></div>
+                </div>
+            </div>
+
+            <div id="previews-section" class="hidden mt-6">
+                <h2 class="text-xl font-semibold mb-2 text-gray-300">Download Previews</h2>
+                <div id="postsContainer" class="mt-2 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4"></div>
+                <div id="load-more-container" class="text-center mt-6 hidden">
+                    <button id="loadMoreBtn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">Load More</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirmation-modal" class="modal pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center opacity-0">
+        <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"></div>
+        <div class="modal-container bg-gray-800 w-11/12 md:max-w-md mx-auto rounded-lg shadow-lg z-50 overflow-y-auto">
+            <div class="modal-content py-4 text-left px-6">
+                <div class="flex justify-between items-center pb-3">
+                    <p class="text-2xl font-bold text-white">Confirm Download</p>
+                    <button id="modal-close" class="modal-close cursor-pointer z-50">
+                        <svg class="fill-current text-white" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><path d="M14.53 4.53l-1.06-1.06L9 7.94 4.53 3.47 3.47 4.53 7.94 9l-4.47 4.47 1.06 1.06L9 10.06l4.47 4.47 1.06-1.06L10.06 9z"></path></svg>
+                    </button>
+                </div>
+                <p id="modal-text" class="text-gray-300 mb-4">Are you sure?</p>
+                <div class="flex justify-end pt-2">
+                    <button id="modal-cancel" class="px-4 bg-transparent p-3 rounded-lg text-cyan-400 hover:bg-gray-700 hover:text-cyan-300 mr-2">Cancel</button>
+                    <button id="modal-confirm" class="px-4 bg-emerald-600 p-3 rounded-lg text-white hover:bg-emerald-700">Confirm</button>
+                </div>
             </div>
         </div>
     </div>
@@ -75,13 +110,27 @@ export const afterRender = () => {
   const useDefaultBlacklistCheckbox = document.getElementById(
     "useDefaultBlacklist"
   );
+  const fetchPostsBtn = document.getElementById("fetchPosts");
+  const actionButtonContainer = document.getElementById(
+    "action-button-container"
+  );
   const startDownloadBtn = document.getElementById("startDownloadProcess");
   const logSection = document.getElementById("log-section");
   const logDiv = document.getElementById("log");
   const progressSection = document.getElementById("progress-section");
   const progressText = document.getElementById("progress-text");
   const progressBar = document.getElementById("progress-bar");
+  const previewsSection = document.getElementById("previews-section");
+  const postsContainer = document.getElementById("postsContainer");
+  const loadMoreContainer = document.getElementById("load-more-container");
+  const loadMoreBtn = document.getElementById("loadMoreBtn");
+  const modal = document.getElementById("confirmation-modal");
+  const modalText = document.getElementById("modal-text");
+  const modalCloseBtn = document.getElementById("modal-close");
+  const modalCancelBtn = document.getElementById("modal-cancel");
+  const modalConfirmBtn = document.getElementById("modal-confirm");
 
+  let fetchedPosts = [];
   let personalBlacklist = [];
   const DEFAULT_BLACKLIST = [
     "guro",
@@ -93,6 +142,8 @@ export const afterRender = () => {
     "cub",
     "young",
   ];
+  let displayedPostCount = 0;
+  const POSTS_PER_PAGE = 20;
 
   function loadCredentials() {
     const savedUsername = localStorage.getItem("e621Username");
@@ -149,9 +200,7 @@ export const afterRender = () => {
   }
 
   function logMessage(message, level = "info") {
-    if (logSection.classList.contains("hidden")) {
-      logSection.classList.remove("hidden");
-    }
+    logSection.classList.add("is-open");
     const p = document.createElement("p");
     p.textContent = message;
     switch (level) {
@@ -181,13 +230,100 @@ export const afterRender = () => {
     const activeBlacklist = useDefaultBlacklistCheckbox.checked
       ? [...new Set([...DEFAULT_BLACKLIST, ...personalBlacklist])]
       : personalBlacklist;
-
     activeBlacklist.forEach((tag) => {
       if (tag.includes(" ") || tag.startsWith("-")) finalTags += ` ${tag}`;
       else finalTags += ` -${tag}`;
     });
-
     return finalTags;
+  }
+
+  async function fetchPostsForPreview() {
+    const tags = tagsInput.value.trim();
+    if (!tags) {
+      logMessage("Please enter tags to search for.", "error");
+      return;
+    }
+    if (!usernameInput.value || !apiKeyInput.value) {
+      logMessage("Username and API Key are required.", "error");
+      return;
+    }
+    logDiv.innerHTML = "";
+    logMessage("Fetching posts...");
+    fetchPostsBtn.disabled = true;
+    fetchPostsBtn.textContent = "Fetching...";
+    postsContainer.innerHTML = "";
+    fetchedPosts = [];
+    displayedPostCount = 0;
+    actionButtonContainer.classList.add("hidden");
+    previewsSection.classList.add("hidden");
+    progressSection.classList.add("hidden");
+    loadMoreContainer.classList.add("hidden");
+
+    const fullTagString = buildTagString();
+    logMessage(`Requesting with tags: ${fullTagString}`);
+    const credentials = {
+      username: usernameInput.value,
+      apiKey: apiKeyInput.value,
+    };
+    const data = await apiRequest(
+      `posts.json?tags=${encodeURIComponent(fullTagString)}&limit=320`,
+      credentials
+    );
+
+    if (data && data.posts && data.posts.length > 0) {
+      fetchedPosts = data.posts.filter((p) => p.file.url);
+      logMessage(`Found ${fetchedPosts.length} posts with downloadable files.`);
+      actionButtonContainer.classList.remove("hidden");
+      previewsSection.classList.remove("hidden");
+      displayFetchedPosts();
+    } else {
+      logMessage("Failed to fetch posts or no posts were found.", "error");
+    }
+    fetchPostsBtn.disabled = false;
+    fetchPostsBtn.textContent = "Fetch Posts for Download";
+  }
+
+  function createPostPreviewElement(post) {
+    const imageUrl = post.sample.has ? post.sample.url : post.preview.url;
+    if (!imageUrl) return null;
+    const link = document.createElement("a");
+    link.href = `https://e621.net/posts/${post.id}`;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    const itemDiv = document.createElement("div");
+    itemDiv.className = "flex flex-col items-center";
+    const img = document.createElement("img");
+    img.src = imageUrl;
+    img.alt = `Post ${post.id}`;
+    img.title = `Post ID: ${post.id}`;
+    img.className = "preview-image w-full bg-gray-700 rounded-lg shadow-lg";
+    img.onerror = () => {
+      img.src = "https://placehold.co/150x150/000000/FFFFFF?text=Error";
+    };
+    const idText = document.createElement("p");
+    idText.className = "text-xs text-gray-400 mt-1";
+    idText.textContent = `ID: ${post.id}`;
+    link.appendChild(img);
+    itemDiv.appendChild(link);
+    itemDiv.appendChild(idText);
+    return itemDiv;
+  }
+
+  function displayFetchedPosts() {
+    const postsToRender = fetchedPosts.slice(
+      displayedPostCount,
+      displayedPostCount + POSTS_PER_PAGE
+    );
+    postsToRender.forEach((post) => {
+      const postElement = createPostPreviewElement(post);
+      if (postElement) postsContainer.appendChild(postElement);
+    });
+    displayedPostCount += postsToRender.length;
+    if (displayedPostCount < fetchedPosts.length) {
+      loadMoreContainer.classList.remove("hidden");
+    } else {
+      loadMoreContainer.classList.add("hidden");
+    }
   }
 
   async function triggerDownload(blob, filename) {
@@ -201,63 +337,35 @@ export const afterRender = () => {
   }
 
   async function startDownload() {
-    const tags = tagsInput.value.trim();
-    if (!tags) {
-      logMessage("Please enter tags to search for.", "error");
-      return;
-    }
-    if (!usernameInput.value || !apiKeyInput.value) {
-      logMessage("Username and API Key are required.", "error");
-      return;
-    }
-
-    logDiv.innerHTML = "";
-    logMessage("Fetching post list...");
-    startDownloadBtn.disabled = true;
-    startDownloadBtn.textContent = "Working...";
-    progressSection.classList.remove("hidden");
-    updateProgress(0, "Fetching post list...");
-
-    const fullTagString = buildTagString();
-    const credentials = {
-      username: usernameInput.value,
-      apiKey: apiKeyInput.value,
-    };
-    const data = await apiRequest(
-      `posts.json?tags=${encodeURIComponent(fullTagString)}&limit=320`,
-      credentials
-    );
-
-    if (!data || !data.posts || data.posts.length === 0) {
+    if (typeof JSZip === "undefined") {
       logMessage(
-        "Failed to fetch posts or no posts were found for these tags.",
+        "JSZip library is not loaded. Please wait or refresh.",
         "error"
       );
-      startDownloadBtn.disabled = false;
-      startDownloadBtn.textContent = "Download Posts";
-      progressSection.classList.add("hidden");
       return;
     }
 
-    const postsToDownload = data.posts.filter((p) => p.file.url);
-    logMessage(
-      `Found ${postsToDownload.length} posts with downloadable files.`
-    );
+    logMessage(`Starting download for ${fetchedPosts.length} posts...`);
+    startDownloadBtn.disabled = true;
+    progressSection.classList.remove("hidden");
 
     const zip = new JSZip();
     let downloadedCount = 0;
 
-    for (const post of postsToDownload) {
+    for (const post of fetchedPosts) {
       downloadedCount++;
-      const progress = (downloadedCount / postsToDownload.length) * 100;
+      const progress = (downloadedCount / fetchedPosts.length) * 100;
       updateProgress(
         progress,
-        `Downloading image ${downloadedCount} of ${postsToDownload.length}...`
+        `Downloading image ${downloadedCount} of ${fetchedPosts.length}...`
       );
       logMessage(`Downloading ${post.file.url}`);
 
       try {
-        const response = await fetch(post.file.url);
+        const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(
+          post.file.url
+        )}`;
+        const response = await fetch(proxyUrl);
         if (!response.ok) throw new Error(`HTTP error ${response.status}`);
         const blob = await response.blob();
         const filename = `${post.id}.${post.file.ext}`;
@@ -275,31 +383,79 @@ export const afterRender = () => {
 
     const zipBlob = await zip.generateAsync({ type: "blob" });
     const zipFilename =
-      tags.replace(/[:*?"<>|]/g, "_").substring(0, 50) + ".zip";
+      tagsInput.value
+        .trim()
+        .replace(/[:*?"<>|]/g, "_")
+        .substring(0, 50) + ".zip";
     triggerDownload(zipBlob, zipFilename);
 
     logMessage(`Zip file '${zipFilename}' created successfully.`);
     startDownloadBtn.disabled = false;
-    startDownloadBtn.textContent = "Download Posts";
     updateProgress(100, "Done!");
   }
 
-  loadCredentials();
-  loadBlacklist();
-  usernameInput.addEventListener("input", saveCredentials);
-  apiKeyInput.addEventListener("input", saveCredentials);
-  addBlacklistBtn.addEventListener("click", addBlacklistTag);
-  blacklistInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      addBlacklistTag();
-    }
-  });
-  blacklistTagsContainer.addEventListener("click", (e) => {
-    const removeButton = e.target.closest(".remove-blacklist-tag");
-    if (removeButton) {
-      removeBlacklistTag(removeButton.dataset.tagToRemove);
-    }
-  });
-  startDownloadBtn.addEventListener("click", startDownload);
+  function openModal() {
+    modalText.textContent = `You are about to download all ${fetchedPosts.length} fetched posts as a .zip file. This may take some time. Are you sure?`;
+    modal.classList.remove("pointer-events-none", "opacity-0");
+    document.body.classList.add("modal-active");
+  }
+
+  function closeModal() {
+    modal.classList.add("pointer-events-none", "opacity-0");
+    document.body.classList.remove("modal-active");
+  }
+
+  function initializePage() {
+    const jszipScript = document.createElement("script");
+    jszipScript.src =
+      "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+    jszipScript.onload = () => {
+      console.log("JSZip loaded successfully.");
+      if (startDownloadBtn) {
+        startDownloadBtn.disabled = false;
+        startDownloadBtn.textContent = "Download All Fetched Posts";
+      }
+    };
+    jszipScript.onerror = () => {
+      console.error("Failed to load JSZip.");
+      if (startDownloadBtn) {
+        startDownloadBtn.textContent = "Download Disabled";
+      }
+      logMessage(
+        "Critical Error: Could not load the JSZip library. Downloading is disabled.",
+        "error"
+      );
+    };
+    document.head.appendChild(jszipScript);
+
+    loadCredentials();
+    loadBlacklist();
+    usernameInput.addEventListener("input", saveCredentials);
+    apiKeyInput.addEventListener("input", saveCredentials);
+    addBlacklistBtn.addEventListener("click", addBlacklistTag);
+    blacklistInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        addBlacklistTag();
+      }
+    });
+    blacklistTagsContainer.addEventListener("click", (e) => {
+      const removeButton = e.target.closest(".remove-blacklist-tag");
+      if (removeButton) removeBlacklistTag(removeButton.dataset.tagToRemove);
+    });
+    fetchPostsBtn.addEventListener("click", fetchPostsForPreview);
+    startDownloadBtn.addEventListener("click", openModal);
+    loadMoreBtn.addEventListener("click", displayFetchedPosts);
+    modalConfirmBtn.addEventListener("click", () => {
+      closeModal();
+      startDownload();
+    });
+    modalCloseBtn.addEventListener("click", closeModal);
+    modalCancelBtn.addEventListener("click", closeModal);
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) closeModal();
+    });
+  }
+
+  initializePage();
 };

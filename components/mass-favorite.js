@@ -23,7 +23,7 @@ export const render = () => {
                         <details>
                             <summary class="cursor-pointer hover:text-white select-none list-none group">
                                 <div class="flex items-center">
-                                    <svg class="w-4 h-4 mr-1 transition-transform duration-300 group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                                     How do I get my API Key?
                                 </div>
                             </summary>
@@ -86,9 +86,11 @@ export const render = () => {
               <div id="progress-bar" class="bg-pink-600 h-2.5 rounded-full" style="width: 0%"></div>
             </div>
             
-            <div id="log-section" class="mt-6 hidden">
-                <h2 class="text-xl font-semibold mb-2 text-gray-300">Log</h2>
-                <div id="log" class="w-full h-48 bg-gray-900 rounded-lg p-3 overflow-y-auto border border-gray-700">
+            <div id="log-section" class="animated-dropdown mt-6">
+                <div>
+                    <h2 class="text-xl font-semibold mb-2 text-gray-300">Log</h2>
+                    <div id="log" class="w-full h-48 bg-gray-900 rounded-lg p-3 overflow-y-auto border border-gray-700">
+                    </div>
                 </div>
             </div>
 
@@ -189,7 +191,6 @@ export const afterRender = () => {
     if (savedUsername) usernameInput.value = savedUsername;
     if (savedApiKey) apiKeyInput.value = savedApiKey;
   }
-
   function saveCredentials() {
     localStorage.setItem("e621Username", usernameInput.value);
     localStorage.setItem("e621ApiKey", apiKeyInput.value);
@@ -216,12 +217,7 @@ export const afterRender = () => {
       const tagPill = document.createElement("span");
       tagPill.className =
         "inline-flex items-center px-2 py-1 bg-gray-600 text-sm font-medium text-gray-100 rounded-full";
-      tagPill.innerHTML = `
-                ${tag}
-                <button data-tag-to-remove="${tag}" class="remove-blacklist-tag ml-1.5 inline-flex-shrink-0 h-4 w-4 rounded-full items-center justify-center text-gray-400 hover:bg-gray-500 hover:text-gray-200 focus:outline-none focus:bg-gray-500 focus:text-white">
-                    <svg class="h-2 w-2" stroke="currentColor" fill="none" viewBox="0 0 8 8"><path stroke-linecap="round" stroke-width="1.5" d="M1 1l6 6m0-6L1 7" /></svg>
-                </button>
-            `;
+      tagPill.innerHTML = `${tag} <button data-tag-to-remove="${tag}" class="remove-blacklist-tag ml-1.5 inline-flex-shrink-0 h-4 w-4 rounded-full items-center justify-center text-gray-400 hover:bg-gray-500 hover:text-gray-200 focus:outline-none"><svg class="h-2 w-2" stroke="currentColor" fill="none" viewBox="0 0 8 8"><path stroke-linecap="round" stroke-width="1.5" d="M1 1l6 6m0-6L1 7" /></svg></button>`;
       blacklistTagsContainer.appendChild(tagPill);
     });
   }
@@ -243,9 +239,7 @@ export const afterRender = () => {
   }
 
   function logMessage(message, level = "info") {
-    if (logSection.classList.contains("hidden")) {
-      logSection.classList.remove("hidden");
-    }
+    logSection.classList.add("is-open");
     const p = document.createElement("p");
     p.textContent = message;
     switch (level) {
@@ -382,9 +376,7 @@ export const afterRender = () => {
     );
     postsToRender.forEach((post) => {
       const postElement = createPostPreviewElement(post);
-      if (postElement) {
-        postsContainer.appendChild(postElement);
-      }
+      if (postElement) postsContainer.appendChild(postElement);
     });
     displayedPostCount += postsToRender.length;
     if (displayedPostCount < fetchedPosts.length) {
@@ -398,9 +390,7 @@ export const afterRender = () => {
     container.innerHTML = "";
     posts.forEach((post) => {
       const postElement = createPostPreviewElement(post);
-      if (postElement) {
-        container.appendChild(postElement);
-      }
+      if (postElement) container.appendChild(postElement);
     });
   }
 
@@ -492,8 +482,7 @@ export const afterRender = () => {
   blacklistTagsContainer.addEventListener("click", (e) => {
     const removeButton = e.target.closest(".remove-blacklist-tag");
     if (removeButton) {
-      const tagToRemove = removeButton.dataset.tagToRemove;
-      removeBlacklistTag(tagToRemove);
+      removeBlacklistTag(removeButton.dataset.tagToRemove);
     }
   });
 
