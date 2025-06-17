@@ -47,6 +47,21 @@ body {
   animation: contentFadeOut 0.4s ease-out forwards;
 }
 
+#preloader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #111827;
+  z-index: 9999;
+  transition: opacity 0.5s ease-out;
+}
+
+#preloader.fade-out-preloader {
+  opacity: 0;
+}
+
 .modal {
   transition: opacity 0.25s ease;
 }
@@ -54,9 +69,7 @@ body {
   overflow-x: hidden;
   overflow-y: auto;
 }
-summary::marker {
-  color: #22d3ee;
-}
+
 #current-preview-image {
   transition: opacity 0.5s ease-in-out;
 }
@@ -65,4 +78,34 @@ summary::marker {
   height: 150px;
   object-fit: cover;
   object-position: center;
+}
+
+details > summary {
+  list-style: none;
+}
+
+details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.animated-dropdown {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.4s ease-in-out;
+}
+
+.animated-dropdown > div {
+  overflow: hidden;
+}
+
+details[open] + .animated-dropdown {
+  grid-template-rows: 1fr;
+}
+
+details summary .arrow {
+  transition: transform 0.3s ease-in-out;
+}
+
+details[open] summary .arrow {
+  transform: rotate(90deg);
 }

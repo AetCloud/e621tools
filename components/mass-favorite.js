@@ -4,7 +4,7 @@ export const render = () => {
   return `
     <div class="container mx-auto p-4 md:p-8">
         <div class="mb-8">
-            <a href="/" data-link class="text-cyan-400 hover:text-cyan-300">&larr; Back to Tool Hub</a>
+            <a href="/" data-link class="text-cyan-400 hover:text-cyan-300">&larr; Back to the hub</a>
         </div>
 
         <div class="bg-gray-800 rounded-2xl p-6 md:p-8 shadow-2xl">
@@ -19,19 +19,28 @@ export const render = () => {
                 <div>
                     <label for="apiKey" class="block text-sm font-medium text-gray-300 mb-2">API Key</label>
                     <input type="password" id="apiKey" class="w-full bg-gray-700 border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none" placeholder="Your e621 API key">
-                    <div class="mt-2">
-                        <details class="text-sm text-gray-400">
-                            <summary class="cursor-pointer hover:text-white select-none">How do I get my API Key?</summary>
-                            <div class="mt-2 p-4 bg-gray-900 rounded-lg border border-gray-700">
-                                <ol class="list-decimal list-inside space-y-2">
-                                    <li>Log in to your e621 account.</li>
-                                    <li>Click your <strong>username</strong> in the top right, then select <strong>"Account"</strong>.</li>
-                                    <li>In the account sidebar on the left, click on <strong>"Manage API Access"</strong>.</li>
-                                    <li>Click the <strong>"Create"</strong> button.</li>
-                                    <li>Your API Key is the long string of characters shown. Copy the entire key and paste it in the field above.</li>
-                                </ol>
-                            </div>
+                    <div class="mt-2 text-sm text-gray-400">
+                        <details>
+                            <summary class="cursor-pointer hover:text-white select-none list-none group">
+                                <div class="flex items-center">
+                                    <svg class="arrow w-4 h-4 mr-1 transition-transform duration-300 group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                    How do I get my API Key?
+                                </div>
+                            </summary>
                         </details>
+                        <div class="animated-dropdown">
+                            <div>
+                                <div class="mt-2 p-4 bg-gray-900 rounded-lg border border-gray-700">
+                                    <ol class="list-decimal list-inside space-y-2">
+                                        <li>Click on the drop down on the top right and go to <strong>Profile</strong>.</li>
+                                        <li>Click on the <strong>cog icon</strong> on the top right.</li>
+                                        <li>Under Profile, click on the <strong>View</strong> button beside API Key.</li>
+                                        <li>Place your password in the box.</li>
+                                        <li>Your API key is shown. Copy and paste it to the box above.</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -42,14 +51,19 @@ export const render = () => {
                     <input type="text" id="tags" class="w-full bg-gray-700 border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none" placeholder="canine score:>50 order:score">
                 </div>
                 <div>
-                    <label for="blacklist" class="block text-sm font-medium text-gray-300 mb-2">Personal Blacklist (space-separated)</label>
-                    <input type="text" id="blacklist" class="w-full bg-gray-700 border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none" placeholder="e.g., questionable explicit">
+                    <label for="blacklist-input" class="block text-sm font-medium text-gray-300 mb-2">Personal Blacklist</label>
+                    <div class="flex">
+                        <input type="text" id="blacklist-input" class="w-full bg-gray-700 border-gray-600 rounded-l-lg p-3 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none" placeholder="Add to blacklist (e.g., gore)">
+                        <button id="add-blacklist-btn" class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-4 rounded-r-lg transition-colors duration-300">Add</button>
+                    </div>
+                    <div id="blacklist-tags-container" class="mt-3 flex flex-wrap gap-2">
+                    </div>
                 </div>
             </div>
             
             <div class="flex items-center mb-6">
                 <input id="useDefaultBlacklist" type="checkbox" checked class="h-4 w-4 rounded border-gray-500 bg-gray-700 text-cyan-600 focus:ring-cyan-500">
-                <label for="useDefaultBlacklist" class="ml-2 block text-sm text-gray-300">Use default blacklist</label>
+                <label for="useDefaultBlacklist" class="ml-2 block text-sm text-gray-300">Use default e621 blacklist</label>
             </div>
 
             <button id="fetchPosts" class="w-full mt-2 bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300">
@@ -72,10 +86,9 @@ export const render = () => {
               <div id="progress-bar" class="bg-pink-600 h-2.5 rounded-full" style="width: 0%"></div>
             </div>
             
-            <div class="mt-6">
+            <div id="log-section" class="mt-6 hidden">
                 <h2 class="text-xl font-semibold mb-2 text-gray-300">Log</h2>
                 <div id="log" class="w-full h-48 bg-gray-900 rounded-lg p-3 overflow-y-auto border border-gray-700">
-                    <p class="text-gray-500">Ready. Fill in your details and fetch some posts.</p>
                 </div>
             </div>
 
@@ -121,7 +134,11 @@ export const afterRender = () => {
   const usernameInput = document.getElementById("username");
   const apiKeyInput = document.getElementById("apiKey");
   const tagsInput = document.getElementById("tags");
-  const blacklistInput = document.getElementById("blacklist");
+  const blacklistInput = document.getElementById("blacklist-input");
+  const addBlacklistBtn = document.getElementById("add-blacklist-btn");
+  const blacklistTagsContainer = document.getElementById(
+    "blacklist-tags-container"
+  );
   const useDefaultBlacklistCheckbox = document.getElementById(
     "useDefaultBlacklist"
   );
@@ -129,6 +146,7 @@ export const afterRender = () => {
   const startFavoriteProcessBtn = document.getElementById(
     "startFavoriteProcess"
   );
+  const logSection = document.getElementById("log-section");
   const logDiv = document.getElementById("log");
   const postsContainer = document.getElementById("postsContainer");
   const historyContainer = document.getElementById("historyContainer");
@@ -151,7 +169,17 @@ export const afterRender = () => {
   const modalConfirmBtn = document.getElementById("modal-confirm");
 
   let fetchedPosts = [];
-  const DEFAULT_BLACKLIST = ["loli", "shota", "cub"];
+  let personalBlacklist = [];
+  const DEFAULT_BLACKLIST = [
+    "guro",
+    "scat",
+    "vore",
+    "watersports",
+    "loli",
+    "shota",
+    "cub",
+    "young",
+  ];
   let displayedPostCount = 0;
   const POSTS_PER_PAGE = 20;
 
@@ -161,12 +189,63 @@ export const afterRender = () => {
     if (savedUsername) usernameInput.value = savedUsername;
     if (savedApiKey) apiKeyInput.value = savedApiKey;
   }
+
   function saveCredentials() {
     localStorage.setItem("e621Username", usernameInput.value);
     localStorage.setItem("e621ApiKey", apiKeyInput.value);
   }
 
+  function loadBlacklist() {
+    const savedBlacklist = localStorage.getItem("e621PersonalBlacklist");
+    if (savedBlacklist) {
+      personalBlacklist = JSON.parse(savedBlacklist);
+      renderBlacklistTags();
+    }
+  }
+
+  function saveBlacklist() {
+    localStorage.setItem(
+      "e621PersonalBlacklist",
+      JSON.stringify(personalBlacklist)
+    );
+  }
+
+  function renderBlacklistTags() {
+    blacklistTagsContainer.innerHTML = "";
+    personalBlacklist.forEach((tag) => {
+      const tagPill = document.createElement("span");
+      tagPill.className =
+        "inline-flex items-center px-2 py-1 bg-gray-600 text-sm font-medium text-gray-100 rounded-full";
+      tagPill.innerHTML = `
+                ${tag}
+                <button data-tag-to-remove="${tag}" class="remove-blacklist-tag ml-1.5 inline-flex-shrink-0 h-4 w-4 rounded-full items-center justify-center text-gray-400 hover:bg-gray-500 hover:text-gray-200 focus:outline-none focus:bg-gray-500 focus:text-white">
+                    <svg class="h-2 w-2" stroke="currentColor" fill="none" viewBox="0 0 8 8"><path stroke-linecap="round" stroke-width="1.5" d="M1 1l6 6m0-6L1 7" /></svg>
+                </button>
+            `;
+      blacklistTagsContainer.appendChild(tagPill);
+    });
+  }
+
+  function addBlacklistTag() {
+    const tagToAdd = blacklistInput.value.trim();
+    if (tagToAdd && !personalBlacklist.includes(tagToAdd)) {
+      personalBlacklist.push(tagToAdd);
+      blacklistInput.value = "";
+      saveBlacklist();
+      renderBlacklistTags();
+    }
+  }
+
+  function removeBlacklistTag(tagToRemove) {
+    personalBlacklist = personalBlacklist.filter((tag) => tag !== tagToRemove);
+    saveBlacklist();
+    renderBlacklistTags();
+  }
+
   function logMessage(message, level = "info") {
+    if (logSection.classList.contains("hidden")) {
+      logSection.classList.remove("hidden");
+    }
     const p = document.createElement("p");
     p.textContent = message;
     switch (level) {
@@ -189,16 +268,18 @@ export const afterRender = () => {
 
   function buildTagString() {
     let finalTags = tagsInput.value.trim();
-    const personalBlacklist = blacklistInput.value
-      .trim()
-      .split(" ")
-      .filter((tag) => tag);
     const activeBlacklist = useDefaultBlacklistCheckbox.checked
       ? [...new Set([...DEFAULT_BLACKLIST, ...personalBlacklist])]
       : personalBlacklist;
+
     activeBlacklist.forEach((tag) => {
-      finalTags += ` -${tag}`;
+      if (tag.includes(" ") || tag.startsWith("-")) {
+        finalTags += ` ${tag}`;
+      } else {
+        finalTags += ` -${tag}`;
+      }
     });
+
     return finalTags;
   }
 
@@ -212,6 +293,8 @@ export const afterRender = () => {
       logMessage("Username and API Key are required.", "error");
       return;
     }
+
+    logDiv.innerHTML = "";
     logMessage("Fetching posts...");
     fetchPostsBtn.disabled = true;
     fetchPostsBtn.textContent = "Fetching...";
@@ -250,7 +333,10 @@ export const afterRender = () => {
       if (data && data.error) {
         logMessage(`Failed to fetch posts: ${data.error}`, "error");
       } else {
-        logMessage("Failed to fetch posts or no posts were found.", "error");
+        logMessage(
+          "Failed to fetch posts or no posts were found for those tags and blacklists.",
+          "error"
+        );
       }
     }
     fetchPostsBtn.disabled = false;
@@ -389,8 +475,24 @@ export const afterRender = () => {
   }
 
   loadCredentials();
+  loadBlacklist();
   usernameInput.addEventListener("input", saveCredentials);
   apiKeyInput.addEventListener("input", saveCredentials);
+  addBlacklistBtn.addEventListener("click", addBlacklistTag);
+  blacklistInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addBlacklistTag();
+    }
+  });
+  blacklistTagsContainer.addEventListener("click", (e) => {
+    const removeButton = e.target.closest(".remove-blacklist-tag");
+    if (removeButton) {
+      const tagToRemove = removeButton.dataset.tagToRemove;
+      removeBlacklistTag(tagToRemove);
+    }
+  });
+
   modalConfirmBtn.addEventListener("click", () => {
     closeModal();
     massFavorite();
