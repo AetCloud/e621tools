@@ -94,6 +94,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const { body, ...fetchOptions } = options;
       const response = await fetch(url, { ...fetchOptions, headers });
 
+      if (response.status === 201 || response.status === 204) {
+        return { success: true };
+      }
+
       if (!response.ok) {
         const errorData = await response
           .json()
@@ -104,12 +108,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }`
         );
       }
-      if (
-        response.status === 204 ||
-        response.headers.get("content-length") === "0"
-      ) {
-        return { success: true };
-      }
+
       return await response.json();
     } catch (error) {
       logMessage(`API Request Failed: ${error.message}`, "error");
@@ -226,7 +225,7 @@ document.addEventListener("DOMContentLoaded", () => {
           method: "POST",
         });
 
-        if (result && (result.success || result.post_id)) {
+        if (result && result.success) {
           logMessage(`Favorited post ${post.id}.`);
           successCount++;
           favoritedPosts.push(post);
