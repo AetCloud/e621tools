@@ -4,6 +4,7 @@ const routes = {
   "/": "./components/hub.js",
   "/tools/mass-favorite": "./components/mass-favorite.js",
   "/tools/mass-downloader": "./components/mass-downloader.js",
+  "/tools/pool-viewer": "./components/pool-viewer.js",
 };
 
 const basePath = location.pathname.startsWith("/e621tools") ? "/e621tools" : "";
