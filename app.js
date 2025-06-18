@@ -6,34 +6,37 @@ const routes = {
   "/tools/mass-downloader": "./components/mass-downloader.js",
 };
 
-const isGitHubPages = location.hostname.endsWith("github.io");
-const basePath = isGitHubPages ? "/e621tools" : "";
+const basePath = location.pathname.startsWith("/e621tools") ? "/e621tools" : "";
 
-const navigateTo = (path) => {
+function navigateTo(path) {
   history.pushState(null, null, basePath + path);
   router();
-};
+}
 
-const router = async () => {
+function resolveRoute() {
   let path = location.pathname;
-  if (isGitHubPages && path.startsWith(basePath)) {
+  if (path.startsWith(basePath)) {
     path = path.substring(basePath.length);
   }
+  return path === "" ? "/" : path;
+}
 
-  if (path === "") {
-    path = "/";
-  }
-
-  const componentPath = routes[path];
+async function router() {
+  let path = resolveRoute();
+  let componentPath = routes[path];
 
   if (!componentPath) {
     const redirectPath = sessionStorage.getItem("redirectPath");
+    sessionStorage.removeItem("redirectPath");
     if (redirectPath && redirectPath !== path) {
-      sessionStorage.removeItem("redirectPath");
-      navigateTo(redirectPath);
-    } else {
-      appContainer.innerHTML = `<div class="text-center p-8 text-red-400"><h1>404 Not Found</h1><p>The page you are looking for does not exist.</p><a href="/" data-link class="text-cyan-400 mt-4 inline-block">Go to Hub</a></div>`;
+      path = redirectPath;
+      componentPath = routes[path];
+      history.replaceState(null, null, basePath + path);
     }
+  }
+
+  if (!componentPath) {
+    appContainer.innerHTML = `<div class="text-center p-8 text-red-400"><h1>404 Not Found</h1><p>The page you are looking for does not exist.</p><a href="/" data-link class="text-cyan-400 mt-4 inline-block">Go to Hub</a></div>`;
     return;
   }
 
@@ -42,7 +45,6 @@ const router = async () => {
 
   try {
     const module = await import(componentPath);
-
     if (module.render && module.afterRender) {
       appContainer.classList.remove("content-exit-active");
       appContainer.innerHTML = module.render();
@@ -62,7 +64,7 @@ const router = async () => {
       400
     );
   }
-};
+}
 
 window.addEventListener("popstate", router);
 
@@ -75,11 +77,5 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  const redirectPath = sessionStorage.getItem("redirectPath");
-  if (redirectPath) {
-    sessionStorage.removeItem("redirectPath");
-    navigateTo(redirectPath);
-  } else {
-    router();
-  }
+  router();
 });
