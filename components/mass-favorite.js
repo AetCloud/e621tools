@@ -183,7 +183,8 @@ export const afterRender = () => {
     "young",
   ];
   let displayedPostCount = 0;
-  const POSTS_PER_PAGE = 20;
+  const POSTS_PER_PAGE = 24;
+  let lazyLoadObserver;
 
   function loadCredentials() {
     const savedUsername = localStorage.getItem("e621Username");
@@ -191,6 +192,7 @@ export const afterRender = () => {
     if (savedUsername) usernameInput.value = savedUsername;
     if (savedApiKey) apiKeyInput.value = savedApiKey;
   }
+
   function saveCredentials() {
     localStorage.setItem("e621Username", usernameInput.value);
     localStorage.setItem("e621ApiKey", apiKeyInput.value);
@@ -239,7 +241,6 @@ export const afterRender = () => {
   }
 
   function logMessage(message, level = "info") {
-    logSection.classList.add("is-open");
     const p = document.createElement("p");
     p.textContent = message;
     switch (level) {
@@ -265,19 +266,50 @@ export const afterRender = () => {
     const activeBlacklist = useDefaultBlacklistCheckbox.checked
       ? [...new Set([...DEFAULT_BLACKLIST, ...personalBlacklist])]
       : personalBlacklist;
-
     activeBlacklist.forEach((tag) => {
-      if (tag.includes(" ") || tag.startsWith("-")) {
-        finalTags += ` ${tag}`;
-      } else {
-        finalTags += ` -${tag}`;
-      }
+      if (tag.includes(" ") || tag.startsWith("-")) finalTags += ` ${tag}`;
+      else finalTags += ` -${tag}`;
     });
-
     return finalTags;
   }
 
-  async function fetchPosts() {
+  async function fetchAllPosts() {
+    logDiv.innerHTML = "";
+    logSection.classList.add("is-open");
+    logMessage("Starting to fetch all posts, this may take a moment...");
+
+    const allPosts = [];
+    let page = 1;
+    const credentials = {
+      username: usernameInput.value,
+      apiKey: apiKeyInput.value,
+    };
+    const fullTagString = buildTagString();
+
+    while (true) {
+      logMessage(`Fetching page ${page}...`);
+      const data = await apiRequest(
+        `posts.json?tags=${encodeURIComponent(
+          fullTagString
+        )}&limit=320&page=${page}`,
+        credentials
+      );
+
+      if (data && data.posts && data.posts.length > 0) {
+        allPosts.push(...data.posts);
+        page++;
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      } else {
+        if (data && data.error) {
+          logMessage(`API Error while fetching: ${data.error}`, "error");
+        }
+        break;
+      }
+    }
+    return allPosts;
+  }
+
+  async function handleFetch() {
     const tags = tagsInput.value.trim();
     if (!tags) {
       logMessage("Please enter tags to search for.", "error");
@@ -288,11 +320,8 @@ export const afterRender = () => {
       return;
     }
 
-    logDiv.innerHTML = "";
-    logMessage("Fetching posts...");
     fetchPostsBtn.disabled = true;
-    fetchPostsBtn.textContent = "Fetching...";
-
+    fetchPostsBtn.textContent = "Fetching All Pages...";
     postsContainer.innerHTML = "";
     historyContainer.innerHTML = "";
     fetchedPosts = [];
@@ -303,35 +332,19 @@ export const afterRender = () => {
     progressContainer.classList.add("hidden");
     livePreviewSection.classList.add("hidden");
     loadMoreContainer.classList.add("hidden");
-    updateProgress(0);
 
-    const fullTagString = buildTagString();
-    logMessage(`Requesting with tags: ${fullTagString}`);
+    const allPosts = await fetchAllPosts();
 
-    const credentials = {
-      username: usernameInput.value,
-      apiKey: apiKeyInput.value,
-    };
-    const data = await apiRequest(
-      `posts.json?tags=${encodeURIComponent(fullTagString)}&limit=320`,
-      credentials
-    );
-
-    if (data && data.posts && data.posts.length > 0) {
-      fetchedPosts = data.posts;
-      logMessage(`Successfully fetched ${fetchedPosts.length} posts.`);
+    if (allPosts.length > 0) {
+      fetchedPosts = allPosts;
+      logMessage(
+        `Finished fetching. Found ${fetchedPosts.length} total posts.`
+      );
       actionButtonContainer.classList.remove("hidden");
       previewsSection.classList.remove("hidden");
       displayFetchedPosts();
     } else {
-      if (data && data.error) {
-        logMessage(`Failed to fetch posts: ${data.error}`, "error");
-      } else {
-        logMessage(
-          "Failed to fetch posts or no posts were found for those tags and blacklists.",
-          "error"
-        );
-      }
+      logMessage("No posts found for the given tags and blacklists.", "warn");
     }
     fetchPostsBtn.disabled = false;
     fetchPostsBtn.textContent = "Fetch Posts";
@@ -340,32 +353,22 @@ export const afterRender = () => {
   function createPostPreviewElement(post) {
     const imageUrl = post.sample.has ? post.sample.url : post.preview.url;
     if (!imageUrl) return null;
-
     const link = document.createElement("a");
     link.href = `https://e621.net/posts/${post.id}`;
     link.target = "_blank";
     link.rel = "noopener noreferrer";
-
     const itemDiv = document.createElement("div");
     itemDiv.className = "flex flex-col items-center";
-
     const img = document.createElement("img");
-    img.src = imageUrl;
-    img.alt = `Post ${post.id}`;
-    img.title = `Post ID: ${post.id}\nTags: ${post.tags.general.join(" ")}`;
-    img.className = "preview-image w-full bg-gray-700 rounded-lg shadow-lg";
-    img.onerror = () => {
-      img.src = "https://placehold.co/150x150/000000/FFFFFF?text=Error";
-    };
-
+    img.dataset.src = imageUrl;
+    img.className =
+      "lazy-load preview-image w-full bg-gray-700 rounded-lg shadow-lg";
     const idText = document.createElement("p");
     idText.className = "text-xs text-gray-400 mt-1";
     idText.textContent = `ID: ${post.id}`;
-
     link.appendChild(img);
     itemDiv.appendChild(link);
     itemDiv.appendChild(idText);
-
     return itemDiv;
   }
 
@@ -376,7 +379,10 @@ export const afterRender = () => {
     );
     postsToRender.forEach((post) => {
       const postElement = createPostPreviewElement(post);
-      if (postElement) postsContainer.appendChild(postElement);
+      if (postElement) {
+        postsContainer.appendChild(postElement);
+        lazyLoadObserver.observe(postElement.querySelector(".lazy-load"));
+      }
     });
     displayedPostCount += postsToRender.length;
     if (displayedPostCount < fetchedPosts.length) {
@@ -390,7 +396,10 @@ export const afterRender = () => {
     container.innerHTML = "";
     posts.forEach((post) => {
       const postElement = createPostPreviewElement(post);
-      if (postElement) container.appendChild(postElement);
+      if (postElement) {
+        container.appendChild(postElement);
+        lazyLoadObserver.observe(postElement.querySelector(".lazy-load"));
+      }
     });
   }
 
@@ -405,6 +414,8 @@ export const afterRender = () => {
   }
 
   async function massFavorite() {
+    logDiv.innerHTML = "";
+    logSection.classList.add("is-open");
     logMessage(`Starting to favorite ${fetchedPosts.length} posts...`);
     startFavoriteProcessBtn.disabled = true;
     progressContainer.classList.remove("hidden");
@@ -468,8 +479,22 @@ export const afterRender = () => {
     document.body.classList.remove("modal-active");
   }
 
+  function initializeLazyLoader() {
+    lazyLoadObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const img = entry.target;
+          img.src = img.dataset.src;
+          img.classList.remove("lazy-load");
+          observer.unobserve(img);
+        }
+      });
+    });
+  }
+
   loadCredentials();
   loadBlacklist();
+  initializeLazyLoader();
   usernameInput.addEventListener("input", saveCredentials);
   apiKeyInput.addEventListener("input", saveCredentials);
   addBlacklistBtn.addEventListener("click", addBlacklistTag);
@@ -490,7 +515,7 @@ export const afterRender = () => {
     closeModal();
     massFavorite();
   });
-  fetchPostsBtn.addEventListener("click", fetchPosts);
+  fetchPostsBtn.addEventListener("click", handleFetch);
   startFavoriteProcessBtn.addEventListener("click", () => {
     if (fetchedPosts.length > 0) {
       openModal();

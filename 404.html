@@ -4,16 +4,28 @@
     <meta charset="utf-8" />
     <title>Napp's e621 Tools - Redirecting...</title>
     <script>
-      const path = window.location.pathname;
-      sessionStorage.setItem("redirectPath", path);
+      const isGitHubPages = window.location.hostname.endsWith("github.io");
+      const basePath = isGitHubPages ? "/e621tools" : "";
 
-      window.location.replace(
-        window.location.protocol + "//" + window.location.host + "/e621tools/"
-      );
+      const path = window.location.pathname;
+      const redirectPath = path.startsWith(basePath)
+        ? path.substring(basePath.length)
+        : path;
+
+      sessionStorage.setItem("redirectPath", redirectPath);
+
+      window.location.replace(basePath + "/");
     </script>
   </head>
   <body>
-    If you are not redirected automatically, please
-    <a href="/e621tools/">click here</a>.
+    <p>
+      If you are not redirected automatically, please
+      <a id="home-link" href="/e621tools/">return to the hub</a>.
+    </p>
+    <script>
+      if (!isGitHubPages) {
+        document.getElementById("home-link").href = "/";
+      }
+    </script>
   </body>
 </html>

@@ -6,7 +6,8 @@ const routes = {
   "/tools/mass-downloader": "./components/mass-downloader.js",
 };
 
-const basePath = "/e621tools";
+const isGitHubPages = location.hostname.endsWith("github.io");
+const basePath = isGitHubPages ? "/e621tools" : "";
 
 const navigateTo = (path) => {
   history.pushState(null, null, basePath + path);
@@ -14,26 +15,25 @@ const navigateTo = (path) => {
 };
 
 const router = async () => {
-  const redirectPath = sessionStorage.getItem("redirectPath");
-  if (redirectPath) {
-    sessionStorage.removeItem("redirectPath");
-    navigateTo(
-      redirectPath.startsWith(basePath)
-        ? redirectPath.substring(basePath.length)
-        : redirectPath
-    );
-    return;
+  let path = location.pathname;
+  if (isGitHubPages && path.startsWith(basePath)) {
+    path = path.substring(basePath.length);
   }
 
-  const path = location.pathname.startsWith(basePath)
-    ? location.pathname.substring(basePath.length)
-    : location.pathname;
+  if (path === "") {
+    path = "/";
+  }
 
-  const finalPath = path === "" ? "/" : path;
-  const componentPath = routes[finalPath];
+  const componentPath = routes[path];
 
   if (!componentPath) {
-    appContainer.innerHTML = `<div class="text-center p-8 text-red-400"><h1>404 Not Found</h1><p>The page you are looking for does not exist.</p><a href="/" data-link class="text-cyan-400 mt-4 inline-block">Go to Hub</a></div>`;
+    const redirectPath = sessionStorage.getItem("redirectPath");
+    if (redirectPath && redirectPath !== path) {
+      sessionStorage.removeItem("redirectPath");
+      navigateTo(redirectPath);
+    } else {
+      appContainer.innerHTML = `<div class="text-center p-8 text-red-400"><h1>404 Not Found</h1><p>The page you are looking for does not exist.</p><a href="/" data-link class="text-cyan-400 mt-4 inline-block">Go to Hub</a></div>`;
+    }
     return;
   }
 
@@ -75,5 +75,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  router();
+  const redirectPath = sessionStorage.getItem("redirectPath");
+  if (redirectPath) {
+    sessionStorage.removeItem("redirectPath");
+    navigateTo(redirectPath);
+  } else {
+    router();
+  }
 });

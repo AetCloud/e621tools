@@ -143,7 +143,8 @@ export const afterRender = () => {
     "young",
   ];
   let displayedPostCount = 0;
-  const POSTS_PER_PAGE = 20;
+  const POSTS_PER_PAGE = 24;
+  let lazyLoadObserver;
 
   function loadCredentials() {
     const savedUsername = localStorage.getItem("e621Username");
@@ -200,7 +201,6 @@ export const afterRender = () => {
   }
 
   function logMessage(message, level = "info") {
-    logSection.classList.add("is-open");
     const p = document.createElement("p");
     p.textContent = message;
     switch (level) {
@@ -237,7 +237,43 @@ export const afterRender = () => {
     return finalTags;
   }
 
-  async function fetchPostsForPreview() {
+  async function fetchAllPosts() {
+    logDiv.innerHTML = "";
+    logSection.classList.add("is-open");
+    logMessage("Starting to fetch all posts, this may take a moment...");
+
+    const allPosts = [];
+    let page = 1;
+    const credentials = {
+      username: usernameInput.value,
+      apiKey: apiKeyInput.value,
+    };
+    const fullTagString = buildTagString();
+
+    while (true) {
+      logMessage(`Fetching page ${page}...`);
+      const data = await apiRequest(
+        `posts.json?tags=${encodeURIComponent(
+          fullTagString
+        )}&limit=320&page=${page}`,
+        credentials
+      );
+
+      if (data && data.posts && data.posts.length > 0) {
+        allPosts.push(...data.posts);
+        page++;
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      } else {
+        if (data && data.error) {
+          logMessage(`API Error while fetching: ${data.error}`, "error");
+        }
+        break;
+      }
+    }
+    return allPosts;
+  }
+
+  async function handleFetch() {
     const tags = tagsInput.value.trim();
     if (!tags) {
       logMessage("Please enter tags to search for.", "error");
@@ -247,10 +283,9 @@ export const afterRender = () => {
       logMessage("Username and API Key are required.", "error");
       return;
     }
-    logDiv.innerHTML = "";
-    logMessage("Fetching posts...");
+
     fetchPostsBtn.disabled = true;
-    fetchPostsBtn.textContent = "Fetching...";
+    fetchPostsBtn.textContent = "Fetching All Pages...";
     postsContainer.innerHTML = "";
     fetchedPosts = [];
     displayedPostCount = 0;
@@ -259,25 +294,18 @@ export const afterRender = () => {
     progressSection.classList.add("hidden");
     loadMoreContainer.classList.add("hidden");
 
-    const fullTagString = buildTagString();
-    logMessage(`Requesting with tags: ${fullTagString}`);
-    const credentials = {
-      username: usernameInput.value,
-      apiKey: apiKeyInput.value,
-    };
-    const data = await apiRequest(
-      `posts.json?tags=${encodeURIComponent(fullTagString)}&limit=320`,
-      credentials
-    );
+    const allPosts = await fetchAllPosts();
 
-    if (data && data.posts && data.posts.length > 0) {
-      fetchedPosts = data.posts.filter((p) => p.file.url);
-      logMessage(`Found ${fetchedPosts.length} posts with downloadable files.`);
+    if (allPosts.length > 0) {
+      fetchedPosts = allPosts.filter((p) => p.file.url);
+      logMessage(
+        `Finished fetching. Found ${fetchedPosts.length} posts with downloadable files.`
+      );
       actionButtonContainer.classList.remove("hidden");
       previewsSection.classList.remove("hidden");
       displayFetchedPosts();
     } else {
-      logMessage("Failed to fetch posts or no posts were found.", "error");
+      logMessage("No posts found for the given tags and blacklists.", "warn");
     }
     fetchPostsBtn.disabled = false;
     fetchPostsBtn.textContent = "Fetch Posts for Download";
@@ -293,13 +321,9 @@ export const afterRender = () => {
     const itemDiv = document.createElement("div");
     itemDiv.className = "flex flex-col items-center";
     const img = document.createElement("img");
-    img.src = imageUrl;
-    img.alt = `Post ${post.id}`;
-    img.title = `Post ID: ${post.id}`;
-    img.className = "preview-image w-full bg-gray-700 rounded-lg shadow-lg";
-    img.onerror = () => {
-      img.src = "https://placehold.co/150x150/000000/FFFFFF?text=Error";
-    };
+    img.dataset.src = imageUrl;
+    img.className =
+      "lazy-load preview-image w-full bg-gray-700 rounded-lg shadow-lg";
     const idText = document.createElement("p");
     idText.className = "text-xs text-gray-400 mt-1";
     idText.textContent = `ID: ${post.id}`;
@@ -316,7 +340,10 @@ export const afterRender = () => {
     );
     postsToRender.forEach((post) => {
       const postElement = createPostPreviewElement(post);
-      if (postElement) postsContainer.appendChild(postElement);
+      if (postElement) {
+        postsContainer.appendChild(postElement);
+        lazyLoadObserver.observe(postElement.querySelector(".lazy-load"));
+      }
     });
     displayedPostCount += postsToRender.length;
     if (displayedPostCount < fetchedPosts.length) {
@@ -345,6 +372,8 @@ export const afterRender = () => {
       return;
     }
 
+    logDiv.innerHTML = "";
+    logSection.classList.add("is-open");
     logMessage(`Starting download for ${fetchedPosts.length} posts...`);
     startDownloadBtn.disabled = true;
     progressSection.classList.remove("hidden");
@@ -405,6 +434,19 @@ export const afterRender = () => {
     document.body.classList.remove("modal-active");
   }
 
+  function initializeLazyLoader() {
+    lazyLoadObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const img = entry.target;
+          img.src = img.dataset.src;
+          img.classList.remove("lazy-load");
+          observer.unobserve(img);
+        }
+      });
+    });
+  }
+
   function initializePage() {
     const jszipScript = document.createElement("script");
     jszipScript.src =
@@ -430,6 +472,8 @@ export const afterRender = () => {
 
     loadCredentials();
     loadBlacklist();
+    initializeLazyLoader();
+
     usernameInput.addEventListener("input", saveCredentials);
     apiKeyInput.addEventListener("input", saveCredentials);
     addBlacklistBtn.addEventListener("click", addBlacklistTag);
@@ -443,7 +487,7 @@ export const afterRender = () => {
       const removeButton = e.target.closest(".remove-blacklist-tag");
       if (removeButton) removeBlacklistTag(removeButton.dataset.tagToRemove);
     });
-    fetchPostsBtn.addEventListener("click", fetchPostsForPreview);
+    fetchPostsBtn.addEventListener("click", handleFetch);
     startDownloadBtn.addEventListener("click", openModal);
     loadMoreBtn.addEventListener("click", displayFetchedPosts);
     modalConfirmBtn.addEventListener("click", () => {
