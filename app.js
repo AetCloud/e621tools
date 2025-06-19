@@ -5,6 +5,7 @@ const routes = {
   "/tools/mass-favorite": "./components/mass-favorite.js",
   "/tools/mass-downloader": "./components/mass-downloader.js",
   "/tools/pool-viewer": "./components/pool-viewer.js",
+  "/settings": "./components/settings.js",
 };
 
 const basePath = location.pathname.startsWith("/e621tools") ? "/e621tools" : "";
@@ -58,7 +59,7 @@ async function router() {
     }
   } catch (error) {
     console.error("Error loading component:", error);
-    appContainer.innerHTML = `<div class="text-center p-8 text-red-400">Error: Could not load page.</div>`;
+    appContainer.innerHTML = `<div class="text-center p-8 text-red-400">Error: Could not load component.</div>`;
   } finally {
     setTimeout(
       () => appContainer.classList.remove("content-enter-active"),

@@ -4,74 +4,71 @@ export const render = () => {
   return `
     <div class="container mx-auto p-4 md:p-8">
         <div class="mb-8">
-            <a href="/" data-link class="text-cyan-400 hover:text-cyan-300">&larr; Back to the hub</a>
+            <a href="/#/" data-link class="text-cyan-400 hover:text-cyan-300">&larr; Back to the hub</a>
         </div>
 
         <div class="bg-gray-800 rounded-2xl p-6 md:p-8 shadow-2xl">
-            <h1 class="text-3xl md:text-4xl font-bold mb-2 text-cyan-400">Mass Favorite Tool</h1>
-            <p class="text-gray-400 mb-6">Favorite posts in bulk based on a tag search.</p>
+            <h1 class="text-3xl md:text-4xl font-bold mb-2 text-center text-cyan-400">Mass Favorite Tool</h1>
+            <p class="text-gray-400 mb-6 text-center">Favorite posts in bulk based on a tag search.</p>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                    <label for="username" class="block text-sm font-medium text-gray-300 mb-2">Username</label>
-                    <input type="text" id="username" class="w-full bg-gray-700 border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none" placeholder="Your e621 username">
-                </div>
-                <div>
-                    <label for="apiKey" class="block text-sm font-medium text-gray-300 mb-2">API Key</label>
-                    <input type="password" id="apiKey" class="w-full bg-gray-700 border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none" placeholder="Your e621 API key">
-                    <div class="mt-2 text-sm text-gray-400">
-                        <details>
-                            <summary class="cursor-pointer hover:text-white select-none list-none group">
-                                <div class="flex items-center">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                                    How do I get my API Key?
+            <div class="w-full max-w-2xl mx-auto mb-4">
+                <label for="tags" class="block text-sm font-medium text-gray-300 mb-2 text-center">Enter Your Search Tags</label>
+                <input type="text" id="tags" class="w-full bg-gray-700 border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none text-center text-lg" placeholder="e.g., canine score:>50 order:score">
+            </div>
+
+            <div class="w-full max-w-3xl mx-auto mt-4">
+                <details id="advanced-options-details">
+                    <summary class="cursor-pointer hover:text-white select-none list-none group text-center text-sm text-gray-400">
+                        <span class="group-open:hidden">Show Advanced Options</span>
+                        <span class="hidden group-open:inline">Hide Advanced Options</span>
+                    </summary>
+                </details>
+                <div class="animated-dropdown">
+                    <div>
+                        <div class="pt-4 mt-4 border-t border-gray-700/50">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-3">Ratings</label>
+                                    <div class="flex flex-wrap gap-x-4 gap-y-2">
+                                        <label class="flex items-center"><input type="checkbox" data-rating="s" class="rating-cb h-4 w-4 rounded border-gray-500 bg-gray-700 text-cyan-600" checked> <span class="ml-2">Safe</span></label>
+                                        <label class="flex items-center"><input type="checkbox" data-rating="q" class="rating-cb h-4 w-4 rounded border-gray-500 bg-gray-700 text-cyan-600" checked> <span class="ml-2">Questionable</span></label>
+                                        <label class="flex items-center"><input type="checkbox" data-rating="e" class="rating-cb h-4 w-4 rounded border-gray-500 bg-gray-700 text-cyan-600" checked> <span class="ml-2">Explicit</span></label>
+                                    </div>
                                 </div>
-                            </summary>
-                        </details>
-                        <div class="animated-dropdown">
-                            <div>
-                                <div class="mt-2 p-4 bg-gray-900 rounded-lg border border-gray-700">
-                                    <ol class="list-decimal list-inside space-y-2">
-                                        <li>Click on the drop down on the top right and go to <strong>Profile</strong>.</li>
-                                        <li>Click on the <strong>cog icon</strong> on the top right.</li>
-                                        <li>Under Profile, click on the <strong>View</strong> button beside API Key.</li>
-                                        <li>Place your password in the box.</li>
-                                        <li>Your API key is shown. Copy and paste it to the box above.</li>
-                                    </ol>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-3">File Types</label>
+                                    <div class="flex flex-wrap gap-x-4 gap-y-2">
+                                        <label class="flex items-center"><input type="checkbox" data-filetype="png,jpg,gif" class="filetype-cb h-4 w-4 rounded border-gray-500 bg-gray-700 text-cyan-600" checked> <span class="ml-2">Image</span></label>
+                                        <label class="flex items-center"><input type="checkbox" data-filetype="webm" class="filetype-cb h-4 w-4 rounded border-gray-500 bg-gray-700 text-cyan-600" checked> <span class="ml-2">Video (WEBM)</span></label>
+                                        <label class="flex items-center"><input type="checkbox" data-filetype="swf" class="filetype-cb h-4 w-4 rounded border-gray-500 bg-gray-700 text-cyan-600" checked> <span class="ml-2">Animation (SWF)</span></label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-6">
+                                <label for="blacklist-input" class="block text-sm font-medium text-gray-300 mb-2">Personal Blacklist</label>
+                                <div class="flex">
+                                    <input type="text" id="blacklist-input" class="w-full bg-gray-700 border-gray-600 rounded-l-lg p-3 text-white focus:ring-2 focus:ring-cyan-500" placeholder="Add a tag to your personal blacklist...">
+                                    <button id="add-blacklist-btn" class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-4 rounded-r-lg">Add</button>
+                                </div>
+                                <div id="blacklist-tags-container" class="mt-3 flex flex-wrap gap-2"></div>
+                                 <div class="flex items-center mt-4">
+                                    <input id="useDefaultBlacklist" type="checkbox" checked class="h-4 w-4 rounded border-gray-500 bg-gray-700 text-cyan-600">
+                                    <label for="useDefaultBlacklist" class="ml-2 block text-sm text-gray-300">Use default e621 blacklist</label>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                    <label for="tags" class="block text-sm font-medium text-gray-300 mb-2">Tags (e.g., wolf score:>100)</label>
-                    <input type="text" id="tags" class="w-full bg-gray-700 border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none" placeholder="canine score:>50 order:score">
-                </div>
-                <div>
-                    <label for="blacklist-input" class="block text-sm font-medium text-gray-300 mb-2">Add to Personal Blacklist</label>
-                    <div class="flex">
-                        <input type="text" id="blacklist-input" class="w-full bg-gray-700 border-gray-600 rounded-l-lg p-3 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none" placeholder="e.g., my_little_pony">
-                        <button id="add-blacklist-btn" class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-4 rounded-r-lg transition-colors duration-300">Add</button>
-                    </div>
-                    <div id="blacklist-tags-container" class="mt-3 flex flex-wrap gap-2">
-                    </div>
-                </div>
-            </div>
             
-            <div class="flex items-center mb-6">
-                <input id="useDefaultBlacklist" type="checkbox" checked class="h-4 w-4 rounded border-gray-500 bg-gray-700 text-cyan-600 focus:ring-cyan-500">
-                <label for="useDefaultBlacklist" class="ml-2 block text-sm text-gray-300">Use default e621 blacklist</label>
+            <div class="mt-8">
+                 <button id="fetchPosts" class="w-full mt-2 bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300">
+                    Fetch Posts
+                </button>
             </div>
-
-            <button id="fetchPosts" class="w-full mt-2 bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300">
-                Fetch Posts
-            </button>
 
             <div id="action-button-container" class="hidden mt-6">
-                <button id="startFavoriteProcess" class="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300">
+                <button id="startFavoriteProcess" class="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 px-4 rounded-lg">
                     Favorite All Fetched Posts
                 </button>
             </div>
@@ -89,8 +86,7 @@ export const render = () => {
             <div id="log-section" class="animated-dropdown mt-6">
                 <div>
                     <h2 class="text-xl font-semibold mb-2 text-gray-300">Log</h2>
-                    <div id="log" class="w-full h-48 bg-gray-900 rounded-lg p-3 overflow-y-auto border border-gray-700">
-                    </div>
+                    <div id="log" class="w-full h-48 bg-gray-900 rounded-lg p-3 overflow-y-auto border border-gray-700"></div>
                 </div>
             </div>
 
@@ -98,7 +94,7 @@ export const render = () => {
                 <h2 class="text-xl font-semibold mb-2 text-gray-300">Fetched Post Previews</h2>
                 <div id="postsContainer" class="mt-2 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4"></div>
                 <div id="load-more-container" class="text-center mt-6 hidden">
-                    <button id="loadMoreBtn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300">
+                    <button id="loadMoreBtn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">
                         Load More
                     </button>
                 </div>
@@ -111,19 +107,31 @@ export const render = () => {
         </div>
     </div>
 
+    <div id="credentials-modal" class="modal pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center opacity-0">
+        <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"></div>
+        <div class="modal-container bg-gray-800 w-11/12 md:max-w-md mx-auto rounded-lg shadow-lg z-50 overflow-y-auto">
+            <div class="modal-content py-4 text-left px-6">
+                <p class="text-2xl font-bold text-white pb-3">Credentials Required</p>
+                <p class="text-gray-300 mb-4">You need to set your Username and API Key in the settings before using this tool.</p>
+                <div class="flex justify-end pt-2">
+                    <button id="modal-cancel-creds" class="px-4 bg-transparent p-3 rounded-lg text-cyan-400 hover:bg-gray-700 mr-2">Cancel</button>
+                    <a href="/settings" data-link id="modal-go-to-settings" class="px-4 bg-cyan-600 p-3 rounded-lg text-white hover:bg-cyan-700">Go to Settings</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="confirmation-modal" class="modal pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center opacity-0">
         <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"></div>
         <div class="modal-container bg-gray-800 w-11/12 md:max-w-md mx-auto rounded-lg shadow-lg z-50 overflow-y-auto">
             <div class="modal-content py-4 text-left px-6">
-                <div class="flex justify-between items-center pb-3">
-                    <p class="text-2xl font-bold text-white">Confirm Action</p>
-                    <button id="modal-close" class="modal-close cursor-pointer z-50">
-                        <svg class="fill-current text-white" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><path d="M14.53 4.53l-1.06-1.06L9 7.94 4.53 3.47 3.47 4.53 7.94 9l-4.47 4.47 1.06 1.06L9 10.06l4.47 4.47 1.06-1.06L10.06 9z"></path></svg>
-                    </button>
-                </div>
+                <p class="text-2xl font-bold text-white">Confirm Action</p>
+                <button id="modal-close" class="modal-close cursor-pointer z-50 absolute top-3.5 right-4">
+                    <svg class="fill-current text-white" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><path d="M14.53 4.53l-1.06-1.06L9 7.94 4.53 3.47 3.47 4.53 7.94 9l-4.47 4.47 1.06 1.06L9 10.06l4.47 4.47 1.06-1.06L10.06 9z"></path></svg>
+                </button>
                 <p id="modal-text" class="text-gray-300 mb-4">Are you sure?</p>
                 <div class="flex justify-end pt-2">
-                    <button id="modal-cancel" class="px-4 bg-transparent p-3 rounded-lg text-cyan-400 hover:bg-gray-700 hover:text-cyan-300 mr-2">Cancel</button>
+                    <button id="modal-cancel" class="px-4 bg-transparent p-3 rounded-lg text-cyan-400 hover:bg-gray-700 mr-2">Cancel</button>
                     <button id="modal-confirm" class="px-4 bg-pink-600 p-3 rounded-lg text-white hover:bg-pink-700">Confirm</button>
                 </div>
             </div>
@@ -133,8 +141,6 @@ export const render = () => {
 };
 
 export const afterRender = () => {
-  const usernameInput = document.getElementById("username");
-  const apiKeyInput = document.getElementById("apiKey");
   const tagsInput = document.getElementById("tags");
   const blacklistInput = document.getElementById("blacklist-input");
   const addBlacklistBtn = document.getElementById("add-blacklist-btn");
@@ -164,11 +170,13 @@ export const afterRender = () => {
   const currentPreviewId = document.getElementById("current-preview-id");
   const loadMoreContainer = document.getElementById("load-more-container");
   const loadMoreBtn = document.getElementById("loadMoreBtn");
-  const modal = document.getElementById("confirmation-modal");
-  const modalText = document.getElementById("modal-text");
-  const modalCloseBtn = document.getElementById("modal-close");
-  const modalCancelBtn = document.getElementById("modal-cancel");
-  const modalConfirmBtn = document.getElementById("modal-confirm");
+  const credsModal = document.getElementById("credentials-modal");
+  const cancelCredsBtn = document.getElementById("modal-cancel-creds");
+  const favConfirmModal = document.getElementById("confirmation-modal");
+  const favModalText = document.getElementById("modal-text");
+  const favModalCloseBtn = favConfirmModal.querySelector("#modal-close");
+  const favModalCancelBtn = favConfirmModal.querySelector("#modal-cancel");
+  const favModalConfirmBtn = favConfirmModal.querySelector("#modal-confirm");
 
   let fetchedPosts = [];
   let personalBlacklist = [];
@@ -186,16 +194,18 @@ export const afterRender = () => {
   const POSTS_PER_PAGE = 24;
   let lazyLoadObserver;
 
-  function loadCredentials() {
-    const savedUsername = localStorage.getItem("e621Username");
-    const savedApiKey = localStorage.getItem("e621ApiKey");
-    if (savedUsername) usernameInput.value = savedUsername;
-    if (savedApiKey) apiKeyInput.value = savedApiKey;
+  function checkCredentials() {
+    const username = localStorage.getItem("e621Username");
+    const apiKey = localStorage.getItem("e621ApiKey");
+    if (!username || !apiKey) {
+      credsModal.classList.remove("pointer-events-none", "opacity-0");
+      return false;
+    }
+    return { username, apiKey };
   }
 
-  function saveCredentials() {
-    localStorage.setItem("e621Username", usernameInput.value);
-    localStorage.setItem("e621ApiKey", apiKeyInput.value);
+  function hideCredentialsModal() {
+    credsModal.classList.add("pointer-events-none", "opacity-0");
   }
 
   function loadBlacklist() {
@@ -266,62 +276,35 @@ export const afterRender = () => {
     const activeBlacklist = useDefaultBlacklistCheckbox.checked
       ? [...new Set([...DEFAULT_BLACKLIST, ...personalBlacklist])]
       : personalBlacklist;
+
+    document.querySelectorAll(".rating-cb:not(:checked)").forEach((cb) => {
+      finalTags += ` -rating:${cb.dataset.rating}`;
+    });
+    document.querySelectorAll(".filetype-cb:not(:checked)").forEach((cb) => {
+      cb.dataset.filetype.split(",").forEach((ext) => {
+        finalTags += ` -filetype:${ext}`;
+      });
+    });
+
     activeBlacklist.forEach((tag) => {
       if (tag.includes(" ") || tag.startsWith("-")) finalTags += ` ${tag}`;
       else finalTags += ` -${tag}`;
     });
-    return finalTags;
-  }
 
-  async function fetchAllPosts() {
-    logDiv.innerHTML = "";
-    logSection.classList.add("is-open");
-    logMessage("Starting to fetch all posts, this may take a moment...");
-
-    const allPosts = [];
-    let page = 1;
-    const credentials = {
-      username: usernameInput.value,
-      apiKey: apiKeyInput.value,
-    };
-    const fullTagString = buildTagString();
-
-    while (true) {
-      logMessage(`Fetching page ${page}...`);
-      const data = await apiRequest(
-        `posts.json?tags=${encodeURIComponent(
-          fullTagString
-        )}&limit=320&page=${page}`,
-        credentials
-      );
-
-      if (data && data.posts && data.posts.length > 0) {
-        allPosts.push(...data.posts);
-        page++;
-        await new Promise((resolve) => setTimeout(resolve, 250));
-      } else {
-        if (data && data.error) {
-          logMessage(`API Error while fetching: ${data.error}`, "error");
-        }
-        break;
-      }
-    }
-    return allPosts;
+    return finalTags.trim();
   }
 
   async function handleFetch() {
-    const tags = tagsInput.value.trim();
-    if (!tags) {
-      logMessage("Please enter tags to search for.", "error");
-      return;
-    }
-    if (!usernameInput.value || !apiKeyInput.value) {
-      logMessage("Username and API Key are required.", "error");
-      return;
-    }
+    const credentials = checkCredentials();
+    if (!credentials) return;
 
+    const tags = tagsInput.value.trim();
+    if (!tags) return;
+
+    logSection.classList.remove("is-open");
+    logDiv.innerHTML = "";
     fetchPostsBtn.disabled = true;
-    fetchPostsBtn.textContent = "Fetching All Pages...";
+
     postsContainer.innerHTML = "";
     historyContainer.innerHTML = "";
     fetchedPosts = [];
@@ -333,19 +316,66 @@ export const afterRender = () => {
     livePreviewSection.classList.add("hidden");
     loadMoreContainer.classList.add("hidden");
 
-    const allPosts = await fetchAllPosts();
+    const fullTagString = buildTagString();
+    const postLimit = 1000;
 
-    if (allPosts.length > 0) {
-      fetchedPosts = allPosts;
-      logMessage(
-        `Finished fetching. Found ${fetchedPosts.length} total posts.`
-      );
-      actionButtonContainer.classList.remove("hidden");
+    logMessage("Fetching first page...");
+    fetchPostsBtn.textContent = "Fetching Page 1...";
+    const initialData = await apiRequest(
+      `posts.json?tags=${encodeURIComponent(fullTagString)}&limit=320&page=1`,
+      credentials
+    );
+
+    if (initialData && initialData.posts && initialData.posts.length > 0) {
+      fetchedPosts.push(...initialData.posts);
       previewsSection.classList.remove("hidden");
       displayFetchedPosts();
+      actionButtonContainer.classList.remove("hidden");
+
+      if (fetchedPosts.length < postLimit && initialData.posts.length === 320) {
+        fetchAllRemainingPosts(fullTagString, credentials, postLimit);
+      } else {
+        logMessage(
+          `Finished fetching. Found ${fetchedPosts.length} total posts.`
+        );
+        fetchPostsBtn.disabled = false;
+        fetchPostsBtn.textContent = "Fetch Posts";
+      }
     } else {
-      logMessage("No posts found for the given tags and blacklists.", "warn");
+      logMessage("No posts found for the given tags and options.", "warn");
+      fetchPostsBtn.disabled = false;
+      fetchPostsBtn.textContent = "Fetch Posts";
     }
+  }
+
+  async function fetchAllRemainingPosts(fullTagString, credentials, postLimit) {
+    let page = 2;
+    while (fetchedPosts.length < postLimit) {
+      const pagesToFetch = Math.ceil((postLimit - fetchedPosts.length) / 320);
+      fetchPostsBtn.textContent = `Fetching Page ${page}/${Math.ceil(
+        postLimit / 320
+      )}... (${fetchedPosts.length}/${postLimit})`;
+      const data = await apiRequest(
+        `posts.json?tags=${encodeURIComponent(
+          fullTagString
+        )}&limit=320&page=${page}`,
+        credentials
+      );
+
+      if (data && data.posts && data.posts.length > 0) {
+        fetchedPosts.push(...data.posts);
+        if (loadMoreContainer.classList.contains("hidden")) {
+          loadMoreContainer.classList.remove("hidden");
+        }
+        page++;
+        if (data.posts.length < 320) break;
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      } else {
+        break;
+      }
+    }
+    fetchedPosts.length = Math.min(fetchedPosts.length, postLimit);
+    logMessage(`Finished fetching. Found ${fetchedPosts.length} total posts.`);
     fetchPostsBtn.disabled = false;
     fetchPostsBtn.textContent = "Fetch Posts";
   }
@@ -360,7 +390,7 @@ export const afterRender = () => {
     const itemDiv = document.createElement("div");
     itemDiv.className = "flex flex-col items-center";
     const img = document.createElement("img");
-    img.dataset.src = imageUrl;
+    img.dataset.src = `https://corsproxy.io/?${encodeURIComponent(imageUrl)}`;
     img.className =
       "lazy-load preview-image w-full bg-gray-700 rounded-lg shadow-lg";
     const idText = document.createElement("p");
@@ -407,13 +437,18 @@ export const afterRender = () => {
     const imageUrl = post.sample.has ? post.sample.url : post.preview.url;
     currentPreviewImage.classList.add("opacity-0");
     setTimeout(() => {
-      currentPreviewImage.src = imageUrl;
+      currentPreviewImage.src = `https://corsproxy.io/?${encodeURIComponent(
+        imageUrl
+      )}`;
       currentPreviewId.textContent = `ID: ${post.id}`;
       currentPreviewImage.classList.remove("opacity-0");
     }, 100);
   }
 
   async function massFavorite() {
+    const credentials = checkCredentials();
+    if (!credentials) return;
+
     logDiv.innerHTML = "";
     logSection.classList.add("is-open");
     logMessage(`Starting to favorite ${fetchedPosts.length} posts...`);
@@ -424,10 +459,6 @@ export const afterRender = () => {
     let failCount = 0;
     let skipCount = 0;
     let favoritedPosts = [];
-    const credentials = {
-      username: usernameInput.value,
-      apiKey: apiKeyInput.value,
-    };
 
     for (const [index, post] of fetchedPosts.entries()) {
       updateLivePreview(post);
@@ -467,15 +498,15 @@ export const afterRender = () => {
     }
   }
 
-  function openModal() {
+  function openFavModal() {
     const postsToFavorite = fetchedPosts.filter((p) => !p.is_favorited).length;
-    modalText.textContent = `You are about to favorite ${postsToFavorite} new posts from your search. Are you sure?`;
-    modal.classList.remove("pointer-events-none", "opacity-0");
+    favModalText.textContent = `You are about to favorite ${postsToFavorite} new posts from your search. Are you sure?`;
+    favConfirmModal.classList.remove("pointer-events-none", "opacity-0");
     document.body.classList.add("modal-active");
   }
 
-  function closeModal() {
-    modal.classList.add("pointer-events-none", "opacity-0");
+  function closeFavModal() {
+    favConfirmModal.classList.add("pointer-events-none", "opacity-0");
     document.body.classList.remove("modal-active");
   }
 
@@ -492,11 +523,8 @@ export const afterRender = () => {
     });
   }
 
-  loadCredentials();
   loadBlacklist();
   initializeLazyLoader();
-  usernameInput.addEventListener("input", saveCredentials);
-  apiKeyInput.addEventListener("input", saveCredentials);
   addBlacklistBtn.addEventListener("click", addBlacklistTag);
   blacklistInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
@@ -510,23 +538,37 @@ export const afterRender = () => {
       removeBlacklistTag(removeButton.dataset.tagToRemove);
     }
   });
+  tagsInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleFetch();
+    }
+  });
 
-  modalConfirmBtn.addEventListener("click", () => {
-    closeModal();
+  favModalConfirmBtn.addEventListener("click", () => {
+    closeFavModal();
     massFavorite();
   });
   fetchPostsBtn.addEventListener("click", handleFetch);
   startFavoriteProcessBtn.addEventListener("click", () => {
+    if (!checkCredentials()) return;
     if (fetchedPosts.length > 0) {
-      openModal();
+      openFavModal();
     } else {
       logMessage("No posts to favorite. Please fetch posts first.", "error");
     }
   });
   loadMoreBtn.addEventListener("click", displayFetchedPosts);
-  modalCloseBtn.addEventListener("click", closeModal);
-  modalCancelBtn.addEventListener("click", closeModal);
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) closeModal();
+  limitSlider.addEventListener("input", (e) => {
+    limitInput.value = e.target.value;
   });
+  limitInput.addEventListener("input", (e) => {
+    limitSlider.value = e.target.value;
+  });
+  favModalCloseBtn.addEventListener("click", closeFavModal);
+  favModalCancelBtn.addEventListener("click", closeFavModal);
+  favConfirmModal.addEventListener("click", (e) => {
+    if (e.target === favConfirmModal) closeFavModal();
+  });
+  cancelCredsBtn.addEventListener("click", hideCredentialsModal);
 };
