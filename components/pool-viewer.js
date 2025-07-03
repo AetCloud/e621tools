@@ -66,6 +66,7 @@ export const render = () => {
 };
 
 export const afterRender = () => {
+  console.log("Pool Viewer: afterRender started.");
   const usernameInput = document.getElementById("username");
   const apiKeyInput = document.getElementById("apiKey");
   const searchInput = document.getElementById("pool-search");
@@ -103,6 +104,9 @@ export const afterRender = () => {
   }
 
   async function fetchPools(page = 1, query = "") {
+    console.log(
+      `Pool Viewer: Fetching pools. Page: ${page}, Query: "${query}"`
+    );
     poolsContainer.innerHTML =
       '<p class="text-center col-span-full">Loading pools...</p>';
     const credentials = {
@@ -115,6 +119,7 @@ export const afterRender = () => {
       credentials
     );
 
+    console.log("Pool Viewer: Received pool list data:", poolListData);
     poolsContainer.innerHTML = "";
     if (poolListData && poolListData.length > 0) {
       for (const pool of poolListData) {
@@ -147,6 +152,7 @@ export const afterRender = () => {
         loadPoolDetails(pool.id, card);
       }
     } else {
+      console.warn("Pool Viewer: No pools found for the current query.");
       poolsContainer.innerHTML =
         '<p class="text-center col-span-full">No pools found.</p>';
     }
@@ -154,6 +160,7 @@ export const afterRender = () => {
   }
 
   async function loadPoolDetails(poolId, cardElement) {
+    console.log(`Pool Viewer: Loading details for pool ID: ${poolId}`);
     const credentials = {
       username: usernameInput.value,
       apiKey: apiKeyInput.value,
@@ -193,6 +200,12 @@ export const afterRender = () => {
       } else {
         thumbContainer.innerHTML = `<span class="text-gray-500 text-sm">No Preview</span>`;
       }
+    } else {
+      console.error(`Failed to load details for pool ${poolId}`, poolData);
+      const artistsPlaceholder = cardElement.querySelector(
+        ".artists-placeholder"
+      );
+      artistsPlaceholder.textContent = "Failed to load details.";
     }
   }
 
@@ -211,6 +224,7 @@ export const afterRender = () => {
   }
 
   async function openPoolViewer(poolId) {
+    console.log(`Pool Viewer: Opening viewer for pool ID: ${poolId}`);
     thumbnailGridContent.innerHTML =
       '<p class="text-center col-span-full text-white">Loading pool images...</p>';
     viewerModal.classList.remove("hidden");
@@ -224,6 +238,7 @@ export const afterRender = () => {
     const data = await apiRequest(`pools/${poolId}.json`, credentials);
     if (data && data.posts) {
       currentPool = data;
+      console.log("Pool Viewer: Loaded current pool data:", currentPool);
       thumbnailGridTitle.textContent = `Select an image from "${currentPool.name.replace(
         /_/g,
         " "
@@ -244,6 +259,9 @@ export const afterRender = () => {
   }
 
   function showImageViewer(startIndex) {
+    console.log(
+      `Pool Viewer: Showing image viewer starting at index: ${startIndex}`
+    );
     currentPostIndex = startIndex;
     thumbnailGridView.classList.add("hidden");
     imageViewer.classList.remove("hidden");
@@ -254,6 +272,9 @@ export const afterRender = () => {
   function updateImageView() {
     if (!currentPool) return;
     const post = currentPool.posts[currentPostIndex];
+    console.log(
+      `Pool Viewer: Displaying image index ${currentPostIndex}, post ID ${post.id}`
+    );
     const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(
       post.file.url
     )}`;
@@ -262,6 +283,10 @@ export const afterRender = () => {
 
   function navigateImage(direction) {
     if (!currentPool) return;
+    const newIndex = currentPostIndex + direction;
+    console.log(
+      `Pool Viewer: Navigating image by ${direction}. Old index: ${currentPostIndex}, New index: ${newIndex}`
+    );
     currentPostIndex += direction;
     if (currentPostIndex < 0) currentPostIndex = currentPool.posts.length - 1;
     if (currentPostIndex >= currentPool.posts.length) currentPostIndex = 0;
@@ -271,6 +296,7 @@ export const afterRender = () => {
   async function voteOnPost(score) {
     if (!currentPool || !usernameInput.value || !apiKeyInput.value) return;
     const post = currentPool.posts[currentPostIndex];
+    console.log(`Pool Viewer: Voting on post ${post.id} with score ${score}`);
     const credentials = {
       username: usernameInput.value,
       apiKey: apiKeyInput.value,
@@ -284,6 +310,7 @@ export const afterRender = () => {
   async function favoritePost() {
     if (!currentPool || !usernameInput.value || !apiKeyInput.value) return;
     const post = currentPool.posts[currentPostIndex];
+    console.log(`Pool Viewer: Favoriting post ${post.id}`);
     const credentials = {
       username: usernameInput.value,
       apiKey: apiKeyInput.value,
@@ -338,6 +365,7 @@ export const afterRender = () => {
   };
 
   function addViewerEventListeners() {
+    console.log("Pool Viewer: Adding keydown and touch event listeners.");
     document.addEventListener("keydown", handleKeyDown);
     imageViewer.addEventListener("touchstart", handleTouchStart, {
       passive: true,
@@ -346,12 +374,14 @@ export const afterRender = () => {
   }
 
   function removeViewerEventListeners() {
+    console.log("Pool Viewer: Removing keydown and touch event listeners.");
     document.removeEventListener("keydown", handleKeyDown);
     imageViewer.removeEventListener("touchstart", handleTouchStart);
     imageViewer.removeEventListener("touchend", handleTouchEnd);
   }
 
   closeViewerBtn.addEventListener("click", () => {
+    console.log("Pool Viewer: Closing viewer modal.");
     viewerModal.classList.add("hidden");
     removeViewerEventListeners();
     currentPool = null;

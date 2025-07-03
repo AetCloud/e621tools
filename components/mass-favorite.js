@@ -559,12 +559,6 @@ export const afterRender = () => {
     }
   });
   loadMoreBtn.addEventListener("click", displayFetchedPosts);
-  limitSlider.addEventListener("input", (e) => {
-    limitInput.value = e.target.value;
-  });
-  limitInput.addEventListener("input", (e) => {
-    limitSlider.value = e.target.value;
-  });
   favModalCloseBtn.addEventListener("click", closeFavModal);
   favModalCancelBtn.addEventListener("click", closeFavModal);
   favConfirmModal.addEventListener("click", (e) => {
