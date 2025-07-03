@@ -9,7 +9,11 @@ const routes = {
 };
 
 async function router() {
-  const path = location.hash.substring(1) || "/";
+  let path = window.location.hash.substring(1);
+  if (path === "") {
+    path = "/";
+  }
+
   const componentPath = routes[path];
 
   if (!componentPath) {
@@ -34,7 +38,7 @@ async function router() {
     }
   } catch (error) {
     console.error("Error loading component:", error);
-    appContainer.innerHTML = `<div class="text-center p-8 text-red-400">Error: Could not load component. Is the path correct?</div>`;
+    appContainer.innerHTML = `<div class="text-center p-8 text-red-400">Error: Could not load component. Check the file path in your router.</div>`;
   } finally {
     setTimeout(
       () => appContainer.classList.remove("content-enter-active"),
@@ -50,8 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const link = e.target.closest("a[data-link]");
     if (link) {
       e.preventDefault();
-      const path = link.getAttribute("href");
-      window.location.hash = path;
+      window.location.hash = link.getAttribute("href");
     }
   });
 
