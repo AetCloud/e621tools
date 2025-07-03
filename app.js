@@ -8,37 +8,12 @@ const routes = {
   "/settings": "./components/settings.js",
 };
 
-const basePath = location.pathname.startsWith("/e621tools") ? "/e621tools" : "";
-
-function navigateTo(path) {
-  history.pushState(null, null, basePath + path);
-  router();
-}
-
-function resolveRoute() {
-  let path = location.pathname;
-  if (path.startsWith(basePath)) {
-    path = path.substring(basePath.length);
-  }
-  return path === "" ? "/" : path;
-}
-
 async function router() {
-  let path = resolveRoute();
-  let componentPath = routes[path];
+  const path = location.hash.substring(1) || "/";
+  const componentPath = routes[path];
 
   if (!componentPath) {
-    const redirectPath = sessionStorage.getItem("redirectPath");
-    sessionStorage.removeItem("redirectPath");
-    if (redirectPath && redirectPath !== path) {
-      path = redirectPath;
-      componentPath = routes[path];
-      history.replaceState(null, null, basePath + path);
-    }
-  }
-
-  if (!componentPath) {
-    appContainer.innerHTML = `<div class="text-center p-8 text-red-400"><h1>404 Not Found</h1><p>The page you are looking for does not exist.</p><a href="/" data-link class="text-cyan-400 mt-4 inline-block">Go to Hub</a></div>`;
+    appContainer.innerHTML = `<div class="text-center p-8 text-red-400"><h1>404 Not Found</h1><p>The page you are looking for does not exist.</p><a href="#/" data-link>Go to Hub</a></div>`;
     return;
   }
 
@@ -59,7 +34,7 @@ async function router() {
     }
   } catch (error) {
     console.error("Error loading component:", error);
-    appContainer.innerHTML = `<div class="text-center p-8 text-red-400">Error: Could not load component.</div>`;
+    appContainer.innerHTML = `<div class="text-center p-8 text-red-400">Error: Could not load component. Is the path correct?</div>`;
   } finally {
     setTimeout(
       () => appContainer.classList.remove("content-enter-active"),
@@ -68,16 +43,21 @@ async function router() {
   }
 }
 
-window.addEventListener("popstate", router);
+window.addEventListener("hashchange", router);
 
 document.addEventListener("DOMContentLoaded", () => {
   document.body.addEventListener("click", (e) => {
-    const link = e.target.closest("[data-link]");
+    const link = e.target.closest("a[data-link]");
     if (link) {
       e.preventDefault();
-      navigateTo(link.getAttribute("href"));
+      const path = link.getAttribute("href");
+      window.location.hash = path;
     }
   });
 
-  router();
+  if (!window.location.hash) {
+    window.location.hash = "#/";
+  } else {
+    router();
+  }
 });

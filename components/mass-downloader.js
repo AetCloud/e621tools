@@ -5,7 +5,7 @@ export const render = () => {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <div class="container mx-auto p-4 md:p-8">
         <div class="mb-8">
-            <a href="/#/" data-link class="text-cyan-400 hover:text-cyan-300">&larr; Back to the hub</a>
+            <a href="#/" data-link class="text-cyan-400 hover:text-cyan-300">&larr; Back to the hub</a>
         </div>
 
         <div class="bg-gray-800 rounded-2xl p-6 md:p-8 shadow-2xl">
