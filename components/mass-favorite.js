@@ -1,13 +1,14 @@
 import { apiRequest } from "../lib/api.js";
+import { initSimpleFadeButton } from "../lib/animations.js";
 
 export const render = () => {
   return `
     <div class="container mx-auto p-4 md:p-8">
         <div class="mb-8">
-            <a href="#/" data-link class="text-cyan-400 hover:text-cyan-300">&larr; Back to the hub</a>
+            <a href="#/" data-link class="bg-gray-700 text-cyan-400 font-bold py-2 px-4 rounded-lg inline-flex items-center">&larr; Back to the hub</a>
         </div>
 
-        <div class="bg-gray-800 rounded-2xl p-6 md:p-8 shadow-2xl">
+        <div class="bg-gray-800 rounded-2xl p-6 md:p-8 shadow-2xl relative">
             <h1 class="text-3xl md:text-4xl font-bold mb-2 text-center text-cyan-400">Mass Favorite Tool</h1>
             <p class="text-gray-400 mb-6 text-center">Favorite posts in bulk based on a tag search.</p>
 
@@ -60,11 +61,25 @@ export const render = () => {
                     </div>
                 </div>
             </div>
+
+            <div class="mt-6">
+                <label for="post-limit" class="block text-sm font-medium text-gray-300 mb-2">Number of posts to fetch per page (max 320)</label>
+                <div class="flex items-center gap-4">
+                    <input type="range" id="post-limit-slider" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer" value="50" min="1" max="320">
+                    <input type="number" id="post-limit-input" class="w-24 bg-gray-700 border-gray-600 rounded-lg p-2 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none" value="50" min="1" max="320">
+                </div>
+            </div>
             
-            <div class="mt-8">
-                 <button id="fetchPosts" class="w-full mt-2 bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300">
-                    Fetch Posts
-                </button>
+            <div class="mt-6">
+                <button id="fetchPostsBtn" class="action-button w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-4 rounded-lg">Fetch Posts</button>
+                <div id="subsequent-controls" class="action-button hidden flex gap-4">
+                    <button id="fetch-more-btn" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-4 rounded-lg">Fetch More</button>
+                    <button id="clear-posts-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg">Clear Posts</button>
+                </div>
+            </div>
+
+            <div id="fetched-count-container" class="text-center mt-4 hidden">
+                 <p id="fetched-count" class="text-gray-300"></p>
             </div>
 
             <div id="action-button-container" class="hidden mt-6">
@@ -83,7 +98,7 @@ export const render = () => {
               <div id="progress-bar" class="bg-pink-600 h-2.5 rounded-full" style="width: 0%"></div>
             </div>
             
-            <div id="log-section" class="animated-dropdown mt-6">
+            <div id="log-section" class="hidden mt-6 animated-dropdown">
                 <div>
                     <h2 class="text-xl font-semibold mb-2 text-gray-300">Log</h2>
                     <div id="log" class="w-full h-48 bg-gray-900 rounded-lg p-3 overflow-y-auto border border-gray-700"></div>
@@ -93,16 +108,19 @@ export const render = () => {
             <div id="previews-section" class="hidden mt-6">
                 <h2 class="text-xl font-semibold mb-2 text-gray-300">Fetched Post Previews</h2>
                 <div id="postsContainer" class="mt-2 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4"></div>
-                <div id="load-more-container" class="text-center mt-6 hidden">
-                    <button id="loadMoreBtn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">
-                        Load More
-                    </button>
+                <div id="load-more-previews-container" class="text-center mt-6 hidden">
+                    <button id="loadMorePreviewsBtn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">Load More Previews</button>
                 </div>
             </div>
             
             <div id="history-section" class="hidden mt-6">
                 <h2 class="text-xl font-semibold mb-2 text-gray-300">Favoriting History</h2>
                 <div id="historyContainer" class="mt-2 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4"></div>
+            </div>
+
+            <div id="loading-modal" class="loading-modal">
+                <div class="spinner"></div>
+                <p class="text-white text-lg">Fetching Posts...</p>
             </div>
         </div>
     </div>
@@ -115,7 +133,7 @@ export const render = () => {
                 <p class="text-gray-300 mb-4">You need to set your Username and API Key in the settings before using this tool.</p>
                 <div class="flex justify-end pt-2">
                     <button id="modal-cancel-creds" class="px-4 bg-transparent p-3 rounded-lg text-cyan-400 hover:bg-gray-700 mr-2">Cancel</button>
-                    <a href="/settings" data-link id="modal-go-to-settings" class="px-4 bg-cyan-600 p-3 rounded-lg text-white hover:bg-cyan-700">Go to Settings</a>
+                    <a href="#/settings" data-link id="modal-go-to-settings" class="px-4 bg-cyan-600 p-3 rounded-lg text-white hover:bg-cyan-700">Go to Settings</a>
                 </div>
             </div>
         </div>
@@ -142,6 +160,8 @@ export const render = () => {
 
 export const afterRender = () => {
   const tagsInput = document.getElementById("tags");
+  const postLimitInput = document.getElementById("post-limit-input");
+  const postLimitSlider = document.getElementById("post-limit-slider");
   const blacklistInput = document.getElementById("blacklist-input");
   const addBlacklistBtn = document.getElementById("add-blacklist-btn");
   const blacklistTagsContainer = document.getElementById(
@@ -150,7 +170,14 @@ export const afterRender = () => {
   const useDefaultBlacklistCheckbox = document.getElementById(
     "useDefaultBlacklist"
   );
-  const fetchPostsBtn = document.getElementById("fetchPosts");
+  const initialFetchBtn = document.getElementById("fetchPostsBtn");
+  const subsequentControls = document.getElementById("subsequent-controls");
+  const fetchMoreBtn = document.getElementById("fetch-more-btn");
+  const clearPostsBtn = document.getElementById("clear-posts-btn");
+  const fetchedCountContainer = document.getElementById(
+    "fetched-count-container"
+  );
+  const fetchedCountEl = document.getElementById("fetched-count");
   const startFavoriteProcessBtn = document.getElementById(
     "startFavoriteProcess"
   );
@@ -168,8 +195,10 @@ export const afterRender = () => {
   const livePreviewSection = document.getElementById("live-preview-section");
   const currentPreviewImage = document.getElementById("current-preview-image");
   const currentPreviewId = document.getElementById("current-preview-id");
-  const loadMoreContainer = document.getElementById("load-more-container");
-  const loadMoreBtn = document.getElementById("loadMoreBtn");
+  const loadMorePreviewsContainer = document.getElementById(
+    "load-more-previews-container"
+  );
+  const loadMorePreviewsBtn = document.getElementById("loadMorePreviewsBtn");
   const credsModal = document.getElementById("credentials-modal");
   const cancelCredsBtn = document.getElementById("modal-cancel-creds");
   const favConfirmModal = document.getElementById("confirmation-modal");
@@ -177,9 +206,12 @@ export const afterRender = () => {
   const favModalCloseBtn = favConfirmModal.querySelector("#modal-close");
   const favModalCancelBtn = favConfirmModal.querySelector("#modal-cancel");
   const favModalConfirmBtn = favConfirmModal.querySelector("#modal-confirm");
+  const loadingModal = document.getElementById("loading-modal");
 
   let fetchedPosts = [];
   let personalBlacklist = [];
+  let lastFetchedTags = "";
+  let currentPage = 1;
   const DEFAULT_BLACKLIST = [
     "guro",
     "scat",
@@ -191,8 +223,10 @@ export const afterRender = () => {
     "young",
   ];
   let displayedPostCount = 0;
-  const POSTS_PER_PAGE = 24;
+  const POSTS_PER_PREVIEW_PAGE = 24;
   let lazyLoadObserver;
+  let confirmActionCallback = null;
+  let animationController;
 
   function checkCredentials() {
     const username = localStorage.getItem("e621Username");
@@ -294,90 +328,97 @@ export const afterRender = () => {
     return finalTags.trim();
   }
 
-  async function handleFetch() {
-    const credentials = checkCredentials();
-    if (!credentials) return;
-
-    const tags = tagsInput.value.trim();
-    if (!tags) return;
-
-    logSection.classList.remove("is-open");
-    logDiv.innerHTML = "";
-    fetchPostsBtn.disabled = true;
-
-    postsContainer.innerHTML = "";
-    historyContainer.innerHTML = "";
-    fetchedPosts = [];
-    displayedPostCount = 0;
-    actionButtonContainer.classList.add("hidden");
-    previewsSection.classList.add("hidden");
-    historySection.classList.add("hidden");
-    progressContainer.classList.add("hidden");
-    livePreviewSection.classList.add("hidden");
-    loadMoreContainer.classList.add("hidden");
-
-    const fullTagString = buildTagString();
-    const postLimit = 1000;
-
-    logMessage("Fetching first page...");
-    fetchPostsBtn.textContent = "Fetching Page 1...";
-    const initialData = await apiRequest(
-      `posts.json?tags=${encodeURIComponent(fullTagString)}&limit=320&page=1`,
-      credentials
-    );
-
-    if (initialData && initialData.posts && initialData.posts.length > 0) {
-      fetchedPosts.push(...initialData.posts);
-      previewsSection.classList.remove("hidden");
-      displayFetchedPosts();
+  function updateFetchedCount() {
+    fetchedCountEl.textContent = `Fetched ${fetchedPosts.length} posts.`;
+    if (fetchedPosts.length > 0) {
+      fetchedCountContainer.classList.remove("hidden");
       actionButtonContainer.classList.remove("hidden");
-
-      if (fetchedPosts.length < postLimit && initialData.posts.length === 320) {
-        fetchAllRemainingPosts(fullTagString, credentials, postLimit);
-      } else {
-        logMessage(
-          `Finished fetching. Found ${fetchedPosts.length} total posts.`
-        );
-        fetchPostsBtn.disabled = false;
-        fetchPostsBtn.textContent = "Fetch Posts";
-      }
     } else {
-      logMessage("No posts found for the given tags and options.", "warn");
-      fetchPostsBtn.disabled = false;
-      fetchPostsBtn.textContent = "Fetch Posts";
+      fetchedCountContainer.classList.add("hidden");
+      actionButtonContainer.classList.add("hidden");
     }
   }
 
-  async function fetchAllRemainingPosts(fullTagString, credentials, postLimit) {
-    let page = 2;
-    while (fetchedPosts.length < postLimit) {
-      const pagesToFetch = Math.ceil((postLimit - fetchedPosts.length) / 320);
-      fetchPostsBtn.textContent = `Fetching Page ${page}/${Math.ceil(
-        postLimit / 320
-      )}... (${fetchedPosts.length}/${postLimit})`;
-      const data = await apiRequest(
-        `posts.json?tags=${encodeURIComponent(
-          fullTagString
-        )}&limit=320&page=${page}`,
-        credentials
-      );
+  function clearFetchedPosts() {
+    fetchedPosts = [];
+    postsContainer.innerHTML = "";
+    historyContainer.innerHTML = "";
+    displayedPostCount = 0;
+    currentPage = 1;
+    lastFetchedTags = "";
+    updateFetchedCount();
+    logDiv.innerHTML = "";
+    previewsSection.classList.add("hidden");
+    historySection.classList.add("hidden");
+    loadMorePreviewsContainer.classList.add("hidden");
+    if (animationController) animationController.showInitial();
+    logSection.classList.add("is-open");
+    logMessage("Cleared all fetched posts.");
+  }
 
-      if (data && data.posts && data.posts.length > 0) {
-        fetchedPosts.push(...data.posts);
-        if (loadMoreContainer.classList.contains("hidden")) {
-          loadMoreContainer.classList.remove("hidden");
-        }
-        page++;
-        if (data.posts.length < 320) break;
-        await new Promise((resolve) => setTimeout(resolve, 250));
-      } else {
-        break;
-      }
+  async function fetchPosts(isFetchingMore = false) {
+    const credentials = checkCredentials();
+    if (!credentials) return;
+
+    const currentTags = buildTagString();
+    if (!currentTags) {
+      logMessage("Please enter tags to search for.", "error");
+      return;
     }
-    fetchedPosts.length = Math.min(fetchedPosts.length, postLimit);
-    logMessage(`Finished fetching. Found ${fetchedPosts.length} total posts.`);
-    fetchPostsBtn.disabled = false;
-    fetchPostsBtn.textContent = "Fetch Posts";
+
+    loadingModal.classList.add("visible");
+
+    if (lastFetchedTags !== currentTags && isFetchingMore) {
+      logMessage("Tags have changed. Please start a new fetch.", "warn");
+      loadingModal.classList.remove("visible");
+      return;
+    }
+
+    if (!isFetchingMore) {
+      fetchedPosts = [];
+      postsContainer.innerHTML = "";
+      displayedPostCount = 0;
+      currentPage = 1;
+    }
+
+    lastFetchedTags = currentTags;
+    const postLimit = parseInt(postLimitInput.value, 10) || 50;
+
+    const buttonToUpdate = isFetchingMore ? fetchMoreBtn : initialFetchBtn;
+    buttonToUpdate.disabled = true;
+
+    if (!isFetchingMore) {
+      logDiv.innerHTML = "";
+      logSection.classList.add("is-open");
+    }
+    logMessage(`Fetching page ${currentPage}...`);
+
+    const data = await apiRequest(
+      `posts.json?tags=${encodeURIComponent(
+        currentTags
+      )}&limit=${postLimit}&page=${currentPage}`,
+      credentials
+    );
+
+    if (data && data.posts && data.posts.length > 0) {
+      const newPosts = data.posts.filter(
+        (p) => !fetchedPosts.some((fp) => fp.id === p.id)
+      );
+      fetchedPosts.push(...newPosts);
+      logMessage(
+        `Fetched ${newPosts.length} new posts. Total: ${fetchedPosts.length}.`
+      );
+      currentPage++;
+      displayPostPreviews();
+      previewsSection.classList.remove("hidden");
+      updateFetchedCount();
+      if (!isFetchingMore) animationController.showSubsequent();
+    } else {
+      logMessage("No more posts found for the given criteria.", "warn");
+    }
+
+    buttonToUpdate.disabled = false;
+    loadingModal.classList.remove("visible");
   }
 
   function createPostPreviewElement(post) {
@@ -390,7 +431,9 @@ export const afterRender = () => {
     const itemDiv = document.createElement("div");
     itemDiv.className = "flex flex-col items-center";
     const img = document.createElement("img");
-    img.dataset.src = `https://corsproxy.io/?${encodeURIComponent(imageUrl)}`;
+    img.dataset.src = `https://corsproxy.io/?url=${encodeURIComponent(
+      imageUrl
+    )}`;
     img.className =
       "lazy-load preview-image w-full bg-gray-700 rounded-lg shadow-lg";
     const idText = document.createElement("p");
@@ -402,10 +445,10 @@ export const afterRender = () => {
     return itemDiv;
   }
 
-  function displayFetchedPosts() {
+  function displayPostPreviews() {
     const postsToRender = fetchedPosts.slice(
       displayedPostCount,
-      displayedPostCount + POSTS_PER_PAGE
+      displayedPostCount + POSTS_PER_PREVIEW_PAGE
     );
     postsToRender.forEach((post) => {
       const postElement = createPostPreviewElement(post);
@@ -416,9 +459,9 @@ export const afterRender = () => {
     });
     displayedPostCount += postsToRender.length;
     if (displayedPostCount < fetchedPosts.length) {
-      loadMoreContainer.classList.remove("hidden");
+      loadMorePreviewsContainer.classList.remove("hidden");
     } else {
-      loadMoreContainer.classList.add("hidden");
+      loadMorePreviewsContainer.classList.add("hidden");
     }
   }
 
@@ -437,7 +480,7 @@ export const afterRender = () => {
     const imageUrl = post.sample.has ? post.sample.url : post.preview.url;
     currentPreviewImage.classList.add("opacity-0");
     setTimeout(() => {
-      currentPreviewImage.src = `https://corsproxy.io/?${encodeURIComponent(
+      currentPreviewImage.src = `https://corsproxy.io/?url=${encodeURIComponent(
         imageUrl
       )}`;
       currentPreviewId.textContent = `ID: ${post.id}`;
@@ -485,7 +528,7 @@ export const afterRender = () => {
         }
       }
       updateProgress(((index + 1) / fetchedPosts.length) * 100);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 500)); // Rate limit
     }
     logMessage(
       `Finished. Success: ${successCount}. Skipped: ${skipCount}. Failed: ${failCount}.`
@@ -499,8 +542,11 @@ export const afterRender = () => {
   }
 
   function openFavModal() {
+    if (typeof confirmActionCallback === "function") {
+      confirmActionCallback();
+    }
     const postsToFavorite = fetchedPosts.filter((p) => !p.is_favorited).length;
-    favModalText.textContent = `You are about to favorite ${postsToFavorite} new posts from your search. Are you sure?`;
+    favModalText.textContent = `You are about to favorite ${postsToFavorite} new posts from your search. This cannot be undone. Are you sure?`;
     favConfirmModal.classList.remove("pointer-events-none", "opacity-0");
     document.body.classList.add("modal-active");
   }
@@ -508,6 +554,7 @@ export const afterRender = () => {
   function closeFavModal() {
     favConfirmModal.classList.add("pointer-events-none", "opacity-0");
     document.body.classList.remove("modal-active");
+    confirmActionCallback = null;
   }
 
   function initializeLazyLoader() {
@@ -523,8 +570,17 @@ export const afterRender = () => {
     });
   }
 
+  function openModal(title, text, onConfirm) {
+    const modal = document.getElementById("confirmation-modal");
+    modal.querySelector("#modal-text").textContent = text;
+    confirmActionCallback = onConfirm;
+    modal.classList.remove("pointer-events-none", "opacity-0");
+    document.body.classList.add("modal-active");
+  }
+
   loadBlacklist();
   initializeLazyLoader();
+
   addBlacklistBtn.addEventListener("click", addBlacklistTag);
   blacklistInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
@@ -538,27 +594,51 @@ export const afterRender = () => {
       removeBlacklistTag(removeButton.dataset.tagToRemove);
     }
   });
-  tagsInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleFetch();
-    }
+
+  postLimitSlider.addEventListener("input", (e) => {
+    postLimitInput.value = e.target.value;
+  });
+  postLimitInput.addEventListener("input", (e) => {
+    postLimitSlider.value = e.target.value;
   });
 
-  favModalConfirmBtn.addEventListener("click", () => {
-    closeFavModal();
-    massFavorite();
+  animationController = initSimpleFadeButton({
+    initialBtn: initialFetchBtn,
+    subsequentControls: subsequentControls,
+    fetchMoreBtn: fetchMoreBtn,
+    clearPostsBtn: clearPostsBtn,
+    onInitialFetch: () => fetchPosts(false),
+    onFetchMore: () => fetchPosts(true),
+    onClear: () => {
+      openModal(
+        "Clear Posts",
+        "Are you sure you want to clear all fetched posts? This cannot be undone.",
+        clearFetchedPosts
+      );
+    },
   });
-  fetchPostsBtn.addEventListener("click", handleFetch);
+
   startFavoriteProcessBtn.addEventListener("click", () => {
     if (!checkCredentials()) return;
     if (fetchedPosts.length > 0) {
-      openFavModal();
+      openModal(
+        "Confirm Mass Favorite",
+        `You are about to favorite all ${fetchedPosts.length} fetched posts. This may take some time and cannot be undone.`,
+        massFavorite
+      );
     } else {
       logMessage("No posts to favorite. Please fetch posts first.", "error");
     }
   });
-  loadMoreBtn.addEventListener("click", displayFetchedPosts);
+
+  loadMorePreviewsBtn.addEventListener("click", displayPostPreviews);
+
+  favModalConfirmBtn.addEventListener("click", () => {
+    if (typeof confirmActionCallback === "function") {
+      confirmActionCallback();
+    }
+    closeFavModal();
+  });
   favModalCloseBtn.addEventListener("click", closeFavModal);
   favModalCancelBtn.addEventListener("click", closeFavModal);
   favConfirmModal.addEventListener("click", (e) => {

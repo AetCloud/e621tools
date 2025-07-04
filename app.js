@@ -1,3 +1,5 @@
+import { managePageTransition, applyButtonAnimations } from './lib/animations.js';
+
 const appContainer = document.getElementById("app-container");
 
 const routes = {
@@ -16,35 +18,30 @@ async function router() {
 
   const componentPath = routes[path];
 
-  if (!componentPath) {
-    appContainer.innerHTML = `<div class="text-center p-8 text-red-400"><h1>404 Not Found</h1><p>The page you are looking for does not exist.</p><a href="#/" data-link>Go to Hub</a></div>`;
-    return;
-  }
-
-  appContainer.classList.add("content-exit-active");
-  await new Promise((resolve) => setTimeout(resolve, 400));
-
-  try {
-    const module = await import(componentPath);
-    if (module.render && module.afterRender) {
-      appContainer.classList.remove("content-exit-active");
-      appContainer.innerHTML = module.render();
-      module.afterRender();
-      appContainer.classList.add("content-enter-active");
-    } else {
-      throw new Error(
-        `Component at ${componentPath} is missing render or afterRender function.`
-      );
+  const loadContent = async () => {
+    if (!componentPath) {
+      appContainer.innerHTML = `<div class="text-center p-8 text-red-400"><h1>404 Not Found</h1><p>The page you are looking for does not exist.</p><a href="#/" data-link>Go to Hub</a></div>`;
+      return;
     }
-  } catch (error) {
-    console.error("Error loading component:", error);
-    appContainer.innerHTML = `<div class="text-center p-8 text-red-400">Error: Could not load component. Check the file path in your router.</div>`;
-  } finally {
-    setTimeout(
-      () => appContainer.classList.remove("content-enter-active"),
-      400
-    );
-  }
+
+    try {
+      const module = await import(componentPath);
+      if (module.render && module.afterRender) {
+        appContainer.innerHTML = module.render();
+        module.afterRender();
+        applyButtonAnimations();
+      } else {
+        throw new Error(
+          `Component at ${componentPath} is missing render or afterRender function.`
+        );
+      }
+    } catch (error) {
+      console.error("Error loading component:", error);
+      appContainer.innerHTML = `<div class="text-center p-8 text-red-400">Error: Could not load component. Check the file path in your router.</div>`;
+    }
+  };
+
+  await managePageTransition(appContainer, loadContent);
 }
 
 window.addEventListener("hashchange", router);
@@ -63,4 +60,6 @@ document.addEventListener("DOMContentLoaded", () => {
   } else {
     router();
   }
+
+  applyButtonAnimations();
 });

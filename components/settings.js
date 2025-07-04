@@ -2,7 +2,7 @@ export const render = () => {
   return `
     <div class="container mx-auto p-4 md:p-8">
         <div class="mb-8">
-            <a href="#/" data-link class="text-cyan-400 hover:text-cyan-300">&larr; Back to the hub</a>
+            <a href="#/" data-link class="bg-gray-700 text-cyan-400 font-bold py-2 px-4 rounded-lg inline-flex items-center">&larr; Back to the hub</a>
         </div>
 
         <div class="bg-gray-800 rounded-2xl p-6 md:p-8 shadow-2xl max-w-2xl mx-auto">

@@ -1,44 +1,57 @@
 body {
   font-family: "Inter", sans-serif;
   overflow-x: hidden;
+  scrollbar-width: none;
 }
+
+body::-webkit-scrollbar {
+  display: none;
+}
+
 .tool-card {
   display: block;
   text-decoration: none;
+  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
 }
 .tool-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0 15px rgba(45, 212, 191, 0.25);
   border-color: #0891b2;
 }
 .tool-card-disabled {
   cursor: not-allowed;
   opacity: 0.6;
 }
-@keyframes contentFadeIn {
-  0% {
+
+@keyframes fadeIn {
+  from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: scale(0.98);
   }
-  100% {
+  to {
     opacity: 1;
-    transform: translateY(0);
+    transform: scale(1);
   }
 }
-@keyframes contentFadeOut {
-  0% {
+
+@keyframes fadeOut {
+  from {
     opacity: 1;
-    transform: translateY(0);
+    transform: scale(1);
   }
-  100% {
+  to {
     opacity: 0;
-    transform: translateY(-20px);
+    transform: scale(0.98);
   }
 }
+
 .content-enter-active {
-  animation: contentFadeIn 0.4s ease-out forwards;
+  animation: fadeIn 0.5s ease-out forwards;
 }
 .content-exit-active {
-  animation: contentFadeOut 0.4s ease-out forwards;
+  animation: fadeOut 0.5s ease-out forwards;
 }
+
 #preloader {
   position: fixed;
   top: 0;
@@ -47,13 +60,40 @@ body {
   height: 100%;
   background-color: #111827;
   z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   transition: opacity 0.5s ease-out;
 }
+
 #preloader.fade-out-preloader {
   opacity: 0;
 }
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #4a5568;
+  border-top-color: #2dd4bf;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .modal {
   transition: opacity 0.25s ease;
+}
+.modal .modal-container {
+  transition: transform 0.25s ease;
+  transform: scale(0.95);
+}
+.modal:not(.pointer-events-none) .modal-container {
+  transform: scale(1);
 }
 .modal-active {
   overflow-x: hidden;
@@ -67,6 +107,13 @@ body {
   height: 150px;
   object-fit: cover;
   object-position: center;
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
+}
+.preview-image.loaded {
+  opacity: 1;
+  transform: scale(1);
 }
 details > summary {
   list-style: none;
@@ -91,4 +138,49 @@ details summary svg {
 }
 details[open] summary svg {
   transform: rotate(90deg);
+}
+
+.action-button {
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+.action-button.hidden {
+  opacity: 0;
+  transform: scale(0.95);
+  pointer-events: none;
+}
+
+.btn-press-animation {
+  transition: transform 0.1s ease-out, box-shadow 0.2s ease-out;
+}
+
+.btn-press-animation:active {
+  transform: scale(0.95);
+  box-shadow: 0 0 15px rgba(45, 212, 191, 0.5);
+}
+
+.btn-press-animation:hover {
+  box-shadow: 0 0 15px rgba(45, 212, 191, 0.3);
+}
+
+.loading-modal {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(31, 41, 55, 0.9);
+  backdrop-filter: blur(4px);
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 1rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease-in-out;
+  border-radius: 1rem;
+}
+
+.loading-modal.visible {
+  opacity: 1;
+  pointer-events: auto;
 }

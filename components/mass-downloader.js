@@ -1,54 +1,90 @@
 import { apiRequest } from "../lib/api.js";
+import { initSimpleFadeButton } from "../lib/animations.js";
 
 export const render = () => {
   return `
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <div class="container mx-auto p-4 md:p-8">
         <div class="mb-8">
-            <a href="#/" data-link class="text-cyan-400 hover:text-cyan-300">&larr; Back to the hub</a>
+            <a href="#/" data-link class="bg-gray-700 text-cyan-400 font-bold py-2 px-4 rounded-lg inline-flex items-center">&larr; Back to the hub</a>
         </div>
 
-        <div class="bg-gray-800 rounded-2xl p-6 md:p-8 shadow-2xl">
-            <h1 class="text-3xl md:text-4xl font-bold mb-2 text-cyan-400">Mass Downloader</h1>
-            <p class="text-gray-400 mb-6">Download posts in bulk as a .zip file from a tag search.</p>
+        <div class="bg-gray-800 rounded-2xl p-6 md:p-8 shadow-2xl relative">
+            <h1 class="text-3xl md:text-4xl font-bold mb-2 text-center text-cyan-400">Mass Downloader</h1>
+            <p class="text-gray-400 mb-6 text-center">Download posts in bulk as a .zip file from a tag search.</p>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                    <label for="username" class="block text-sm font-medium text-gray-300 mb-2">Username</label>
-                    <input type="text" id="username" class="w-full bg-gray-700 border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none" placeholder="Your e621 username">
-                </div>
-                <div>
-                    <label for="apiKey" class="block text-sm font-medium text-gray-300 mb-2">API Key</label>
-                    <input type="password" id="apiKey" class="w-full bg-gray-700 border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none" placeholder="Your e621 API key">
-                </div>
+            <div class="w-full max-w-2xl mx-auto mb-4">
+                <label for="tags" class="block text-sm font-medium text-gray-300 mb-2 text-center">Enter Your Search Tags</label>
+                <input type="text" id="tags" class="w-full bg-gray-700 border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none text-center text-lg" placeholder="e.g., canine score:>50 order:score">
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                    <label for="tags" class="block text-sm font-medium text-gray-300 mb-2">Tags</label>
-                    <input type="text" id="tags" class="w-full bg-gray-700 border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none" placeholder="canine score:>50 order:score">
-                </div>
-                <div>
-                    <label for="blacklist-input" class="block text-sm font-medium text-gray-300 mb-2">Add to Personal Blacklist</label>
-                    <div class="flex">
-                        <input type="text" id="blacklist-input" class="w-full bg-gray-700 border-gray-600 rounded-l-lg p-3 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none" placeholder="e.g., my_little_pony">
-                        <button id="add-blacklist-btn" class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-4 rounded-r-lg">Add</button>
+            <div class="w-full max-w-3xl mx-auto mt-4">
+                <details id="advanced-options-details">
+                    <summary class="cursor-pointer hover:text-white select-none list-none group text-center text-sm text-gray-400">
+                        <span class="group-open:hidden">Show Advanced Options</span>
+                        <span class="hidden group-open:inline">Hide Advanced Options</span>
+                    </summary>
+                </details>
+                <div class="animated-dropdown">
+                    <div>
+                        <div class="pt-4 mt-4 border-t border-gray-700/50">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-3">Ratings</label>
+                                    <div class="flex flex-wrap gap-x-4 gap-y-2">
+                                        <label class="flex items-center"><input type="checkbox" data-rating="s" class="rating-cb h-4 w-4 rounded border-gray-500 bg-gray-700 text-cyan-600" checked> <span class="ml-2">Safe</span></label>
+                                        <label class="flex items-center"><input type="checkbox" data-rating="q" class="rating-cb h-4 w-4 rounded border-gray-500 bg-gray-700 text-cyan-600" checked> <span class="ml-2">Questionable</span></label>
+                                        <label class="flex items-center"><input type="checkbox" data-rating="e" class="rating-cb h-4 w-4 rounded border-gray-500 bg-gray-700 text-cyan-600" checked> <span class="ml-2">Explicit</span></label>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-3">File Types</label>
+                                    <div class="flex flex-wrap gap-x-4 gap-y-2">
+                                        <label class="flex items-center"><input type="checkbox" data-filetype="png,jpg,gif" class="filetype-cb h-4 w-4 rounded border-gray-500 bg-gray-700 text-cyan-600" checked> <span class="ml-2">Image</span></label>
+                                        <label class="flex items-center"><input type="checkbox" data-filetype="webm" class="filetype-cb h-4 w-4 rounded border-gray-500 bg-gray-700 text-cyan-600" checked> <span class="ml-2">Video (WEBM)</span></label>
+                                        <label class="flex items-center"><input type="checkbox" data-filetype="swf" class="filetype-cb h-4 w-4 rounded border-gray-500 bg-gray-700 text-cyan-600" checked> <span class="ml-2">Animation (SWF)</span></label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-6">
+                                <label for="blacklist-input" class="block text-sm font-medium text-gray-300 mb-2">Personal Blacklist</label>
+                                <div class="flex">
+                                    <input type="text" id="blacklist-input" class="w-full bg-gray-700 border-gray-600 rounded-l-lg p-3 text-white focus:ring-2 focus:ring-cyan-500" placeholder="Add a tag to your personal blacklist...">
+                                    <button id="add-blacklist-btn" class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-4 rounded-r-lg">Add</button>
+                                </div>
+                                <div id="blacklist-tags-container" class="mt-3 flex flex-wrap gap-2"></div>
+                                 <div class="flex items-center mt-4">
+                                    <input id="useDefaultBlacklist" type="checkbox" checked class="h-4 w-4 rounded border-gray-500 bg-gray-700 text-cyan-600">
+                                    <label for="useDefaultBlacklist" class="ml-2 block text-sm text-gray-300">Use default e621 blacklist</label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div id="blacklist-tags-container" class="mt-3 flex flex-wrap gap-2"></div>
                 </div>
             </div>
             
-            <div class="flex items-center mb-6">
-                <input id="useDefaultBlacklist" type="checkbox" checked class="h-4 w-4 rounded border-gray-500 bg-gray-700 text-cyan-600 focus:ring-cyan-500">
-                <label for="useDefaultBlacklist" class="ml-2 block text-sm text-gray-300">Use default e621 blacklist</label>
+            <div class="mt-6">
+                <label for="post-limit" class="block text-sm font-medium text-gray-300 mb-2">Number of posts to fetch (max 250)</label>
+                <div class="flex items-center gap-4">
+                    <input type="range" id="post-limit-slider" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer" value="50" min="1" max="250">
+                    <input type="number" id="post-limit-input" class="w-24 bg-gray-700 border-gray-600 rounded-lg p-2 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none" value="50" min="1" max="250">
+                </div>
             </div>
 
-            <button id="fetchPosts" class="w-full mt-2 bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300">
-                Fetch Posts for Download
-            </button>
+            <div class="mt-6">
+                <button id="fetchPostsBtn" class="action-button w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-4 rounded-lg">Fetch Posts</button>
+                <div id="subsequent-controls" class="action-button hidden flex gap-4">
+                    <button id="fetch-more-btn" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-4 rounded-lg">Fetch More</button>
+                    <button id="clear-posts-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg">Clear Posts</button>
+                </div>
+            </div>
+
+            <div id="fetched-count-container" class="text-center mt-4 hidden">
+                 <p id="fetched-count" class="text-gray-300"></p>
+            </div>
 
             <div id="action-button-container" class="hidden mt-6">
-                <button id="startDownloadProcess" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300" disabled>
+                <button id="startDownloadProcess" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300">
                     Download All Fetched Posts
                 </button>
             </div>
@@ -70,8 +106,27 @@ export const render = () => {
             <div id="previews-section" class="hidden mt-6">
                 <h2 class="text-xl font-semibold mb-2 text-gray-300">Download Previews</h2>
                 <div id="postsContainer" class="mt-2 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4"></div>
-                <div id="load-more-container" class="text-center mt-6 hidden">
-                    <button id="loadMoreBtn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">Load More</button>
+                <div id="load-more-previews-container" class="text-center mt-6 hidden">
+                    <button id="loadMorePreviewsBtn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg">Load More Previews</button>
+                </div>
+            </div>
+
+            <div id="loading-modal" class="loading-modal">
+                <div class="spinner"></div>
+                <p class="text-white text-lg">Fetching Posts...</p>
+            </div>
+        </div>
+    </div>
+    
+    <div id="credentials-modal" class="modal pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center opacity-0">
+        <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"></div>
+        <div class="modal-container bg-gray-800 w-11/12 md:max-w-md mx-auto rounded-lg shadow-lg z-50 overflow-y-auto">
+            <div class="modal-content py-4 text-left px-6">
+                <p class="text-2xl font-bold text-white pb-3">Credentials Required</p>
+                <p class="text-gray-300 mb-4">You need to set your Username and API Key in the settings before using this tool.</p>
+                <div class="flex justify-end pt-2">
+                    <button id="modal-cancel-creds" class="px-4 bg-transparent p-3 rounded-lg text-cyan-400 hover:bg-gray-700 mr-2">Cancel</button>
+                    <a href="#/settings" data-link id="modal-go-to-settings" class="px-4 bg-cyan-600 p-3 rounded-lg text-white hover:bg-cyan-700">Go to Settings</a>
                 </div>
             </div>
         </div>
@@ -82,7 +137,7 @@ export const render = () => {
         <div class="modal-container bg-gray-800 w-11/12 md:max-w-md mx-auto rounded-lg shadow-lg z-50 overflow-y-auto">
             <div class="modal-content py-4 text-left px-6">
                 <div class="flex justify-between items-center pb-3">
-                    <p class="text-2xl font-bold text-white">Confirm Download</p>
+                    <p id="modal-title" class="text-2xl font-bold text-white">Confirm Action</p>
                     <button id="modal-close" class="modal-close cursor-pointer z-50">
                         <svg class="fill-current text-white" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18"><path d="M14.53 4.53l-1.06-1.06L9 7.94 4.53 3.47 3.47 4.53 7.94 9l-4.47 4.47 1.06 1.06L9 10.06l4.47 4.47 1.06-1.06L10.06 9z"></path></svg>
                     </button>
@@ -99,9 +154,9 @@ export const render = () => {
 };
 
 export const afterRender = () => {
-  const usernameInput = document.getElementById("username");
-  const apiKeyInput = document.getElementById("apiKey");
   const tagsInput = document.getElementById("tags");
+  const postLimitInput = document.getElementById("post-limit-input");
+  const postLimitSlider = document.getElementById("post-limit-slider");
   const blacklistInput = document.getElementById("blacklist-input");
   const addBlacklistBtn = document.getElementById("add-blacklist-btn");
   const blacklistTagsContainer = document.getElementById(
@@ -110,7 +165,14 @@ export const afterRender = () => {
   const useDefaultBlacklistCheckbox = document.getElementById(
     "useDefaultBlacklist"
   );
-  const fetchPostsBtn = document.getElementById("fetchPosts");
+  const initialFetchBtn = document.getElementById("fetchPostsBtn");
+  const subsequentControls = document.getElementById("subsequent-controls");
+  const fetchMoreBtn = document.getElementById("fetch-more-btn");
+  const clearPostsBtn = document.getElementById("clear-posts-btn");
+  const fetchedCountContainer = document.getElementById(
+    "fetched-count-container"
+  );
+  const fetchedCountEl = document.getElementById("fetched-count");
   const actionButtonContainer = document.getElementById(
     "action-button-container"
   );
@@ -122,16 +184,24 @@ export const afterRender = () => {
   const progressBar = document.getElementById("progress-bar");
   const previewsSection = document.getElementById("previews-section");
   const postsContainer = document.getElementById("postsContainer");
-  const loadMoreContainer = document.getElementById("load-more-container");
-  const loadMoreBtn = document.getElementById("loadMoreBtn");
+  const loadMorePreviewsContainer = document.getElementById(
+    "load-more-previews-container"
+  );
+  const loadMorePreviewsBtn = document.getElementById("loadMorePreviewsBtn");
   const modal = document.getElementById("confirmation-modal");
+  const modalTitle = document.getElementById("modal-title");
   const modalText = document.getElementById("modal-text");
   const modalCloseBtn = document.getElementById("modal-close");
   const modalCancelBtn = document.getElementById("modal-cancel");
   const modalConfirmBtn = document.getElementById("modal-confirm");
+  const credsModal = document.getElementById("credentials-modal");
+  const cancelCredsBtn = document.getElementById("modal-cancel-creds");
+  const loadingModal = document.getElementById("loading-modal");
 
   let fetchedPosts = [];
   let personalBlacklist = [];
+  let lastFetchedTags = "";
+  let currentPage = 1;
   const DEFAULT_BLACKLIST = [
     "guro",
     "scat",
@@ -143,19 +213,23 @@ export const afterRender = () => {
     "young",
   ];
   let displayedPostCount = 0;
-  const POSTS_PER_PAGE = 24;
+  const POSTS_PER_PREVIEW_PAGE = 24;
   let lazyLoadObserver;
+  let confirmActionCallback = null;
+  let animationController;
 
-  function loadCredentials() {
-    const savedUsername = localStorage.getItem("e621Username");
-    const savedApiKey = localStorage.getItem("e621ApiKey");
-    if (savedUsername) usernameInput.value = savedUsername;
-    if (savedApiKey) apiKeyInput.value = savedApiKey;
+  function checkCredentials() {
+    const username = localStorage.getItem("e621Username");
+    const apiKey = localStorage.getItem("e621ApiKey");
+    if (!username || !apiKey) {
+      credsModal.classList.remove("pointer-events-none", "opacity-0");
+      return false;
+    }
+    return { username, apiKey };
   }
 
-  function saveCredentials() {
-    localStorage.setItem("e621Username", usernameInput.value);
-    localStorage.setItem("e621ApiKey", apiKeyInput.value);
+  function hideCredentialsModal() {
+    credsModal.classList.add("pointer-events-none", "opacity-0");
   }
 
   function loadBlacklist() {
@@ -230,85 +304,113 @@ export const afterRender = () => {
     const activeBlacklist = useDefaultBlacklistCheckbox.checked
       ? [...new Set([...DEFAULT_BLACKLIST, ...personalBlacklist])]
       : personalBlacklist;
+
+    document.querySelectorAll(".rating-cb:not(:checked)").forEach((cb) => {
+      finalTags += ` -rating:${cb.dataset.rating}`;
+    });
+    document.querySelectorAll(".filetype-cb:not(:checked)").forEach((cb) => {
+      cb.dataset.filetype.split(",").forEach((ext) => {
+        finalTags += ` -filetype:${ext}`;
+      });
+    });
+
     activeBlacklist.forEach((tag) => {
       if (tag.includes(" ") || tag.startsWith("-")) finalTags += ` ${tag}`;
       else finalTags += ` -${tag}`;
     });
-    return finalTags;
+
+    return finalTags.trim();
   }
 
-  async function fetchAllPosts() {
-    logDiv.innerHTML = "";
-    logSection.classList.add("is-open");
-    logMessage("Starting to fetch all posts, this may take a moment...");
-
-    const allPosts = [];
-    let page = 1;
-    const credentials = {
-      username: usernameInput.value,
-      apiKey: apiKeyInput.value,
-    };
-    const fullTagString = buildTagString();
-
-    while (true) {
-      logMessage(`Fetching page ${page}...`);
-      const data = await apiRequest(
-        `posts.json?tags=${encodeURIComponent(
-          fullTagString
-        )}&limit=320&page=${page}`,
-        credentials
-      );
-
-      if (data && data.posts && data.posts.length > 0) {
-        allPosts.push(...data.posts);
-        page++;
-        await new Promise((resolve) => setTimeout(resolve, 250));
-      } else {
-        if (data && data.error) {
-          logMessage(`API Error while fetching: ${data.error}`, "error");
-        }
-        break;
-      }
+  function updateFetchedCount() {
+    fetchedCountEl.textContent = `Fetched ${fetchedPosts.length} posts.`;
+    if (fetchedPosts.length > 0) {
+      fetchedCountContainer.classList.remove("hidden");
+      actionButtonContainer.classList.remove("hidden");
+    } else {
+      fetchedCountContainer.classList.add("hidden");
+      actionButtonContainer.classList.add("hidden");
     }
-    return allPosts;
   }
 
-  async function handleFetch() {
-    const tags = tagsInput.value.trim();
-    if (!tags) {
+  function clearFetchedPosts() {
+    fetchedPosts = [];
+    postsContainer.innerHTML = "";
+    displayedPostCount = 0;
+    currentPage = 1;
+    lastFetchedTags = "";
+    updateFetchedCount();
+    logDiv.innerHTML = "";
+    previewsSection.classList.add("hidden");
+    loadMorePreviewsContainer.classList.add("hidden");
+    if (animationController) animationController.showInitial();
+    logSection.classList.add("is-open");
+    logMessage("Cleared all fetched posts.");
+  }
+
+  async function fetchPosts(isFetchingMore = false) {
+    const credentials = checkCredentials();
+    if (!credentials) return;
+
+    const currentTags = buildTagString();
+    if (!currentTags) {
       logMessage("Please enter tags to search for.", "error");
       return;
     }
-    if (!usernameInput.value || !apiKeyInput.value) {
-      logMessage("Username and API Key are required.", "error");
+
+    loadingModal.classList.add("visible");
+
+    if (lastFetchedTags !== currentTags && isFetchingMore) {
+      logMessage("Tags have changed. Please start a new fetch.", "warn");
+      loadingModal.classList.remove("visible");
       return;
     }
 
-    fetchPostsBtn.disabled = true;
-    fetchPostsBtn.textContent = "Fetching All Pages...";
-    postsContainer.innerHTML = "";
-    fetchedPosts = [];
-    displayedPostCount = 0;
-    actionButtonContainer.classList.add("hidden");
-    previewsSection.classList.add("hidden");
-    progressSection.classList.add("hidden");
-    loadMoreContainer.classList.add("hidden");
-
-    const allPosts = await fetchAllPosts();
-
-    if (allPosts.length > 0) {
-      fetchedPosts = allPosts.filter((p) => p.file.url);
-      logMessage(
-        `Finished fetching. Found ${fetchedPosts.length} posts with downloadable files.`
-      );
-      actionButtonContainer.classList.remove("hidden");
-      previewsSection.classList.remove("hidden");
-      displayFetchedPosts();
-    } else {
-      logMessage("No posts found for the given tags and blacklists.", "warn");
+    if (!isFetchingMore) {
+      fetchedPosts = [];
+      postsContainer.innerHTML = "";
+      displayedPostCount = 0;
+      currentPage = 1;
     }
-    fetchPostsBtn.disabled = false;
-    fetchPostsBtn.textContent = "Fetch Posts for Download";
+
+    lastFetchedTags = currentTags;
+    const postLimit = parseInt(postLimitInput.value, 10) || 50;
+
+    const buttonToUpdate = isFetchingMore ? fetchMoreBtn : initialFetchBtn;
+    buttonToUpdate.disabled = true;
+
+    if (!isFetchingMore) {
+      logDiv.innerHTML = "";
+      logSection.classList.add("is-open");
+    }
+    logMessage(`Fetching page ${currentPage}...`);
+
+    const data = await apiRequest(
+      `posts.json?tags=${encodeURIComponent(
+        currentTags
+      )}&limit=${postLimit}&page=${currentPage}`,
+      credentials
+    );
+
+    if (data && data.posts && data.posts.length > 0) {
+      const newPosts = data.posts.filter(
+        (p) => p.file.url && !fetchedPosts.some((fp) => fp.id === p.id)
+      );
+      fetchedPosts.push(...newPosts);
+      logMessage(
+        `Fetched ${newPosts.length} new posts. Total: ${fetchedPosts.length}.`
+      );
+      currentPage++;
+      displayPostPreviews();
+      previewsSection.classList.remove("hidden");
+      updateFetchedCount();
+      if (!isFetchingMore) animationController.showSubsequent();
+    } else {
+      logMessage("No more posts found for the given criteria.", "warn");
+    }
+
+    buttonToUpdate.disabled = false;
+    loadingModal.classList.remove("visible");
   }
 
   function createPostPreviewElement(post) {
@@ -321,9 +423,12 @@ export const afterRender = () => {
     const itemDiv = document.createElement("div");
     itemDiv.className = "flex flex-col items-center";
     const img = document.createElement("img");
-    img.dataset.src = imageUrl;
+    img.dataset.src = `https://corsproxy.io/?url=${encodeURIComponent(
+      imageUrl
+    )}`;
     img.className =
       "lazy-load preview-image w-full bg-gray-700 rounded-lg shadow-lg";
+    img.onload = () => img.classList.add("loaded");
     const idText = document.createElement("p");
     idText.className = "text-xs text-gray-400 mt-1";
     idText.textContent = `ID: ${post.id}`;
@@ -333,10 +438,10 @@ export const afterRender = () => {
     return itemDiv;
   }
 
-  function displayFetchedPosts() {
+  function displayPostPreviews() {
     const postsToRender = fetchedPosts.slice(
       displayedPostCount,
-      displayedPostCount + POSTS_PER_PAGE
+      displayedPostCount + POSTS_PER_PREVIEW_PAGE
     );
     postsToRender.forEach((post) => {
       const postElement = createPostPreviewElement(post);
@@ -347,9 +452,9 @@ export const afterRender = () => {
     });
     displayedPostCount += postsToRender.length;
     if (displayedPostCount < fetchedPosts.length) {
-      loadMoreContainer.classList.remove("hidden");
+      loadMorePreviewsContainer.classList.remove("hidden");
     } else {
-      loadMoreContainer.classList.add("hidden");
+      loadMorePreviewsContainer.classList.add("hidden");
     }
   }
 
@@ -391,7 +496,7 @@ export const afterRender = () => {
       logMessage(`Downloading ${post.file.url}`);
 
       try {
-        const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(
+        const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(
           post.file.url
         )}`;
         const response = await fetch(proxyUrl);
@@ -423,8 +528,10 @@ export const afterRender = () => {
     updateProgress(100, "Done!");
   }
 
-  function openModal() {
-    modalText.textContent = `You are about to download all ${fetchedPosts.length} fetched posts as a .zip file. This may take some time. Are you sure?`;
+  function openModal(title, text, onConfirm) {
+    modalTitle.textContent = title;
+    modalText.textContent = text;
+    confirmActionCallback = onConfirm;
     modal.classList.remove("pointer-events-none", "opacity-0");
     document.body.classList.add("modal-active");
   }
@@ -432,6 +539,7 @@ export const afterRender = () => {
   function closeModal() {
     modal.classList.add("pointer-events-none", "opacity-0");
     document.body.classList.remove("modal-active");
+    confirmActionCallback = null;
   }
 
   function initializeLazyLoader() {
@@ -455,7 +563,6 @@ export const afterRender = () => {
       console.log("JSZip loaded successfully.");
       if (startDownloadBtn) {
         startDownloadBtn.disabled = false;
-        startDownloadBtn.textContent = "Download All Fetched Posts";
       }
     };
     jszipScript.onerror = () => {
@@ -470,12 +577,16 @@ export const afterRender = () => {
     };
     document.head.appendChild(jszipScript);
 
-    loadCredentials();
     loadBlacklist();
     initializeLazyLoader();
 
-    usernameInput.addEventListener("input", saveCredentials);
-    apiKeyInput.addEventListener("input", saveCredentials);
+    postLimitSlider.addEventListener("input", (e) => {
+      postLimitInput.value = e.target.value;
+    });
+    postLimitInput.addEventListener("input", (e) => {
+      postLimitSlider.value = e.target.value;
+    });
+
     addBlacklistBtn.addEventListener("click", addBlacklistTag);
     blacklistInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
@@ -487,18 +598,46 @@ export const afterRender = () => {
       const removeButton = e.target.closest(".remove-blacklist-tag");
       if (removeButton) removeBlacklistTag(removeButton.dataset.tagToRemove);
     });
-    fetchPostsBtn.addEventListener("click", handleFetch);
-    startDownloadBtn.addEventListener("click", openModal);
-    loadMoreBtn.addEventListener("click", displayFetchedPosts);
-    modalConfirmBtn.addEventListener("click", () => {
-      closeModal();
-      startDownload();
+
+    animationController = initSimpleFadeButton({
+      initialBtn: document.getElementById("fetchPostsBtn"),
+      subsequentControls: document.getElementById("subsequent-controls"),
+      fetchMoreBtn: document.getElementById("fetch-more-btn"),
+      clearPostsBtn: document.getElementById("clear-posts-btn"),
+      onInitialFetch: () => fetchPosts(false),
+      onFetchMore: () => fetchPosts(true),
+      onClear: () => {
+        openModal(
+          "Clear Posts",
+          "Are you sure you want to clear all fetched posts? This cannot be undone.",
+          clearFetchedPosts
+        );
+      },
     });
+
+    startDownloadBtn.addEventListener("click", () => {
+      openModal(
+        "Confirm Download",
+        `You are about to download all ${fetchedPosts.length} fetched posts as a .zip file. This may take some time. Are you sure?`,
+        startDownload
+      );
+    });
+
+    loadMorePreviewsBtn.addEventListener("click", displayPostPreviews);
+
+    modalConfirmBtn.addEventListener("click", () => {
+      if (typeof confirmActionCallback === "function") {
+        confirmActionCallback();
+      }
+      closeModal();
+    });
+
     modalCloseBtn.addEventListener("click", closeModal);
     modalCancelBtn.addEventListener("click", closeModal);
     modal.addEventListener("click", (e) => {
       if (e.target === modal) closeModal();
     });
+    cancelCredsBtn.addEventListener("click", hideCredentialsModal);
   }
 
   initializePage();
