@@ -1,44 +1,41 @@
+import { logger } from "../lib/utils.js";
+
 export const render = () => {
   return `
-    <div class="container mx-auto p-4 md:p-8">
+    <div class="page-container anim-fade-in-up">
         <div class="mb-8">
             <a href="#/" data-link class="bg-gray-700 text-cyan-400 font-bold py-2 px-4 rounded-lg inline-flex items-center">&larr; Back to the hub</a>
         </div>
 
-        <div class="bg-gray-800 rounded-2xl p-6 md:p-8 shadow-2xl max-w-2xl mx-auto">
-            <h1 class="text-3xl md:text-4xl font-bold mb-2 text-cyan-400">Settings</h1>
-            <p class="text-gray-400 mb-6">Your API credentials are saved securely in your browser's local storage.</p>
+        <div class="content-box max-w-2xl mx-auto">
+            <h1 class="text-3xl md:text-4xl font-bold mb-6 text-cyan-400">Settings</h1>
 
-            <div class="space-y-6">
+            <div class="space-y-8">
                 <div>
-                    <label for="username" class="block text-sm font-medium text-gray-300 mb-2">Username</label>
-                    <input type="text" id="username" class="w-full bg-gray-700 border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none" placeholder="Your e621 username">
-                </div>
-                <div>
-                    <label for="apiKey" class="block text-sm font-medium text-gray-300 mb-2">API Key</label>
-                    <input type="password" id="apiKey" class="w-full bg-gray-700 border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none" placeholder="Your e621 API key">
-                    <div class="mt-2 text-sm text-gray-400">
-                        <details>
-                            <summary class="cursor-pointer hover:text-white select-none list-none group">
-                                <div class="flex items-center">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                                    How do I get my API Key?
-                                </div>
-                            </summary>
-                        </details>
-                        <div class="animated-dropdown">
-                            <div>
-                                <div class="mt-2 p-4 bg-gray-900 rounded-lg border border-gray-700">
-                                    <ol class="list-decimal list-inside space-y-2">
-                                        <li>Click on the drop down on the top right and go to <strong>Profile</strong>.</li>
-                                        <li>Click on the <strong>cog icon</strong> on the top right.</li>
-                                        <li>Under Profile, click on the <strong>View</strong> button beside API Key.</li>
-                                        <li>Place your password in the box.</li>
-                                        <li>Your API key is shown. Copy and paste it to the box above.</li>
-                                    </ol>
-                                </div>
-                            </div>
+                    <h2 class="text-2xl font-bold text-cyan-500 mb-4 pb-2 border-b border-gray-700">Credentials</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="username" class="block text-sm font-medium text-gray-300 mb-2">Username</label>
+                            <input type="text" id="username" class="w-full bg-gray-700 border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none" placeholder="Your e621 username">
                         </div>
+                        <div>
+                            <label for="apiKey" class="block text-sm font-medium text-gray-300 mb-2">API Key</label>
+                            <input type="password" id="apiKey" class="w-full bg-gray-700 border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none" placeholder="Your e621 API key">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="text-2xl font-bold text-cyan-500 mb-4 pb-2 border-b border-gray-700">Application</h2>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <label for="debug-toggle" class="font-medium text-gray-300">Enable Debug Logging</label>
+                            <p class="text-sm text-gray-400">Shows verbose logs in the developer console.</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="debug-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
                     </div>
                 </div>
             </div>
@@ -59,12 +56,14 @@ export const afterRender = () => {
   const apiKeyInput = document.getElementById("apiKey");
   const saveBtn = document.getElementById("save-credentials-btn");
   const saveConfirmMsg = document.getElementById("save-confirm-msg");
+  const debugToggle = document.getElementById("debug-toggle");
 
-  function loadCredentials() {
+  function loadSettings() {
     const savedUsername = localStorage.getItem("e621Username");
     const savedApiKey = localStorage.getItem("e621ApiKey");
     if (savedUsername) usernameInput.value = savedUsername;
     if (savedApiKey) apiKeyInput.value = savedApiKey;
+    debugToggle.checked = logger.isDebug;
   }
 
   function saveCredentials() {
@@ -76,6 +75,11 @@ export const afterRender = () => {
     }, 2000);
   }
 
-  loadCredentials();
+  function handleDebugToggle() {
+    logger.setDebug(debugToggle.checked);
+  }
+
+  loadSettings();
   saveBtn.addEventListener("click", saveCredentials);
+  debugToggle.addEventListener("change", handleDebugToggle);
 };
