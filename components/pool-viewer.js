@@ -5,6 +5,7 @@ import {
   logger,
   initCollapsible,
 } from "../lib/utils.js";
+import { setPosts } from "../lib/post-cache.js";
 
 export const render = () => {
   return `
@@ -214,7 +215,7 @@ export const afterRender = () => {
     );
 
     poolsContainer.innerHTML =
-      '<div class-="col-span-full text-center"><div class="spinner mx-auto"></div></div>';
+      '<div class="col-span-full text-center"><div class="spinner mx-auto"></div></div>';
     const searchQuery = query ? `search[name_matches]=*${query}*` : "";
     const poolListData = await apiRequest(
       `pools.json?${searchQuery}&page=${page}&limit=12`, null, { signal: currentController.signal }
@@ -228,7 +229,9 @@ export const afterRender = () => {
     }
 
     poolsContainer.innerHTML = "";
-    if (poolListData && poolListData.length > 0) {
+    if (poolListData.success === false) {
+        poolsContainer.innerHTML = `<p class="col-span-full text-center text-red-400">${poolListData.error}</p>`;
+    } else if (poolListData && poolListData.length > 0) {
       logger.log(
         `[Pool Viewer] Found ${poolListData.length} pools. Rendering cards.`
       );
@@ -287,6 +290,7 @@ export const afterRender = () => {
 
     if (postData?.posts?.length > 0) {
       const post = postData.posts[0];
+      setPosts(postData.posts);
       let thumbnailUrl = (post.sample && post.sample.has && post.sample.url)
         ? post.sample.url
         : post.preview.url;
@@ -360,7 +364,6 @@ export const afterRender = () => {
       " "
     )}"`;
     
-    // Check if JSZip library is loaded
     if (typeof JSZip === 'undefined') {
         const script = document.createElement('script');
         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
@@ -374,6 +377,13 @@ export const afterRender = () => {
     const poolData = await apiRequest(`pools/${poolId}.json`, null, { signal: currentController.signal });
     if (poolData?.aborted || fetchId !== currentPoolsFetchId) {
         logger.log(`[Pool Viewer] Aborting pool viewer open. Fetch ID ${fetchId} is stale or aborted.`);
+        return;
+    }
+
+    if (poolData.success === false) {
+        logger.error("[Pool Viewer] Failed to load pool data.", poolData.error);
+        thumbnailGridContent.innerHTML = `<p class='text-red-400 col-span-full text-center'>Could not load this pool: ${poolData.error}</p>`;
+        thumbLoader.classList.remove("visible");
         return;
     }
 
@@ -400,6 +410,7 @@ export const afterRender = () => {
     }
 
     if (postsData?.posts && postsData.posts.length > 0) {
+      setPosts(postsData.posts);
       const postsById = postsData.posts.reduce(
         (acc, post) => ({ ...acc, [post.id]: post }),
         {}
@@ -433,7 +444,7 @@ export const afterRender = () => {
         thumbLoader.classList.remove("visible");
         return;
       }
-      const postsToRender = currentPool.posts.filter(p => showBlacklisted || !p.flags.deleted);
+      const postsToRender = currentPool.posts;
       const start = (page - 1) * THUMBS_PER_PAGE;
       const postsForPage = postsToRender.slice(
         start,
@@ -458,7 +469,7 @@ export const afterRender = () => {
             const credentials = JSON.parse(localStorage.getItem('e621credentials') || '{}');
             try {
               const postDetails = await apiRequest(`posts/${postToRender.id}.json`, credentials);
-              const postData = postDetails?.post || postDetails; // Handle both response formats
+              const postData = postDetails?.post || postDetails;
               if (postData?.file?.md5) {
                 imageUrl = `https://static1.e621.net/data/sample/${postData.file.md5.substring(0, 2)}/${postData.file.md5.substring(2, 4)}/${postData.file.md5}.jpg`;
                 isBlacklisted = postData.flags.deleted || (postData.tags.general && postData.tags.general.includes("young"));

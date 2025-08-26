@@ -6,6 +6,7 @@ import {
   createTagButton,
 } from "../lib/utils.js";
 import { Autocomplete } from "../lib/autocomplete.js";
+import { setPosts } from "../lib/post-cache.js";
 
 export const render = () => {
   return `
@@ -164,7 +165,18 @@ export const afterRender = () => {
         apiRequest(`tag_implications.json?search[antecedent_name]=${tagName}`),
         apiRequest(`posts.json?tags=${tagName}&limit=12`),
       ]);
+      
+    if (postData?.posts) {
+        setPosts(postData.posts);
+    }
 
+    if (tagData.success === false) {
+        tagInfoBox.innerHTML = `<p class="text-red-400 text-center">An error occurred while fetching tag data: ${tagData.error}</p>`;
+        relationshipsBox.innerHTML = "";
+        postsGrid.innerHTML = "";
+        return;
+    }
+    
     if (!Array.isArray(tagData)) {
       tagInfoBox.innerHTML = `<p class="text-red-400 text-center">An error occurred while fetching tag data.</p>`;
       relationshipsBox.innerHTML = "";

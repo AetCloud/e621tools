@@ -13,30 +13,65 @@ export const render = () => {
 
         <main>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                
+
                 <a href="#/tools/mass-favorite" data-link class="tool-card content-box">
-                    <h2 class="text-2xl font-bold text-cyan-500 mb-2">Mass Favorite Tool</h2>
-                    <p class="text-gray-400">Use advanced search filters to favorite hundreds of posts at once.</p>
+                    <div class="tool-card-icon">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-cyan-500 mb-2">Mass Favorite Tool</h2>
+                        <p class="text-gray-400">Use advanced search filters to favorite hundreds of posts at once.</p>
+                    </div>
                 </a>
 
                 <a href="#/tools/mass-downloader" data-link class="tool-card content-box">
-                    <h2 class="text-2xl font-bold text-cyan-500 mb-2">Mass Downloader</h2>
-                    <p class="text-gray-400">Find and download entire collections of posts as a single .zip file.</p>
+                    <div class="tool-card-icon">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-cyan-500 mb-2">Mass Downloader</h2>
+                        <p class="text-gray-400">Find and download entire collections of posts as a single .zip file.</p>
+                    </div>
+                </a>
+
+                <a href="#/tools/image-uploader" data-link class="tool-card content-box">
+                    <div class="tool-card-icon">
+                         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-cyan-500 mb-2">Image Uploader</h2>
+                        <p class="text-gray-400">Upload images with tags and define parent-child relationships.</p>
+                    </div>
                 </a>
 
                 <a href="#/tools/pool-viewer" data-link class="tool-card content-box">
-                    <h2 class="text-2xl font-bold text-cyan-500 mb-2">Pool Viewer</h2>
-                    <p class="text-gray-400">Browse image sets and comics in a dedicated, full-screen image viewer.</p>
+                    <div class="tool-card-icon">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-cyan-500 mb-2">Pool Viewer</h2>
+                        <p class="text-gray-400">Browse image sets and comics in a dedicated, full-screen image viewer.</p>
+                    </div>
                 </a>
 
                 <a href="#/tools/tag-explorer" data-link class="tool-card content-box">
-                    <h2 class="text-2xl font-bold text-cyan-500 mb-2">Tag Explorer</h2>
-                    <p class="text-gray-400">Analyze tag relationships and discover related content.</p>
+                    <div class="tool-card-icon">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 4v12l-4-2-4 2V4M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-cyan-500 mb-2">Tag Explorer</h2>
+                        <p class="text-gray-400">Analyze tag relationships and discover related content.</p>
+                    </div>
                 </a>
                 
                 <div class="tool-card-disabled content-box">
-                    <h2 class="text-2xl font-bold text-gray-600 mb-2">Reverse Search</h2>
-                    <p class="text-gray-500">Find the source of an image by uploading it or providing a URL. (Coming Soon)</p>
+                    <div class="tool-card-icon">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-600 mb-2">Reverse Search</h2>
+                        <p class="text-gray-500">Find the source of an image by uploading it or providing a URL. (Coming Soon)</p>
+                    </div>
                 </div>
 
             </div>
