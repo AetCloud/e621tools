@@ -6,7 +6,7 @@ import {
 import { initModalSystem } from "./lib/modal.js";
 import { apiRequest } from "./lib/api.js";
 import { getPost, setPost } from "./lib/post-cache.js";
-import { BaseTool } from "../lib/BaseTool.js";
+import { BaseTool } from "./lib/BaseTool.js";
 const appContainer = document.getElementById("app-container");
 
 const routes = {
