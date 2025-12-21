@@ -2,118 +2,112 @@ import { renderSharedForm } from "../lib/utils.js";
 import { BaseTool } from "../lib/BaseTool.js";
 import { apiRequest } from "../lib/api.js";
 
-/**
- * Helper: check if a post matches blacklist
- */
-function matchesBlacklist(post, blacklist) {
-  const tags = new Set([
-    ...(post.tags?.general || []),
-    ...(post.tags?.species || []),
-    ...(post.tags?.character || []),
-    ...(post.tags?.copyright || []),
-  ]);
-
-  return blacklist.some((tag) => tags.has(tag));
-}
-
 class MassFavoriteTool extends BaseTool {
   constructor() {
     const config = {
       title: "Mass Favorite Tool",
       description:
-        "Favorite posts in bulk or remove favorites that match your blacklist.",
-      actionButtonText: "Run Mass Favorite",
+        "Favorite posts in bulk or remove fetched posts from your favorites.",
+      actionButtonText: "Start",
       actionButtonColor: "bg-pink-600",
       actionButtonHoverColor: "hover:bg-pink-700",
       maxPostLimit: 320,
-      actionConfirmationText: (posts) =>
-        `Process ${posts.length} fetched posts?`,
-    };
+      actionConfirmationText: (posts, mode) => {
+        const newFavorites = posts.filter((p) => !p.is_favorited).length;
+        const favoritesToRemove = posts.filter((p) => p.is_favorited).length;
 
+        return mode === "favorite"
+          ? `You are about to favorite ${newFavorites} posts. This cannot be undone. Proceed?`
+          : `You are about to remove ${favoritesToRemove} posts from your favorites. Proceed?`;
+      },
+    };
     super(config);
-    this.config.startAction = this.run;
+    this.config.startAction = (opts) => this.runAction(opts);
   }
 
-  async run({ posts, credentials, log, updateProgress, button }) {
-    const mode = document.getElementById("favorite-mode")?.value || "favorite";
+  async runAction({ posts, credentials, log, updateProgress, button }) {
+    const modeSelect = document.getElementById("favorite-mode");
+    const mode = modeSelect?.value || "favorite";
 
+    const newFavorites = posts.filter((p) => !p.is_favorited).length;
+    const favoritesToRemove = posts.filter((p) => p.is_favorited).length;
+
+    log(`Starting "${mode}" action for ${posts.length} fetched posts...`);
     button.disabled = true;
-    document.getElementById("progress-container").classList.remove("hidden");
-
+    this.progressContainer.classList.remove("hidden");
     updateProgress(0, "Starting...");
 
-    let success = 0;
-    let fail = 0;
-    let skipped = 0;
+    let success = 0,
+      fail = 0,
+      skipped = 0;
 
-    // Decide which posts to act on
-    const targets =
-      mode === "favorite"
-        ? posts.filter((p) => !p.is_favorited)
-        : posts.filter(
-            (p) => p.is_favorited && matchesBlacklist(p, this.personalBlacklist)
-          );
+    for (const [index, post] of posts.entries()) {
+      if (mode === "favorite") {
+        if (post.is_favorited) {
+          log(`Skipping ${post.id}, already favorited.`, "warn");
+          skipped++;
+          continue;
+        }
 
-    log(`Mode: ${mode}. Processing ${targets.length} posts...`);
-
-    for (let i = 0; i < targets.length; i++) {
-      const post = targets[i];
-
-      const endpoint =
-        mode === "favorite"
-          ? `favorites.json?post_id=${post.id}`
-          : `favorites/${post.id}.json`;
-
-      const method = mode === "favorite" ? "POST" : "DELETE";
-
-      const result = await apiRequest(endpoint, credentials, { method });
-
-      if (result?.success) {
-        success++;
-        log(
-          `${mode === "favorite" ? "Favorited" : "Unfavorited"} post ${
-            post.id
-          }.`
+        const result = await apiRequest(
+          `favorites.json?post_id=${post.id}`,
+          credentials,
+          { method: "POST" }
         );
-      } else if (result?.error && result.error.toLowerCase().includes("rate")) {
-        log("Rate limited. Backing off 5 seconds...", "warn");
-        await new Promise((r) => setTimeout(r, 5000));
-        i--; // retry same post
-        continue;
-      } else {
-        fail++;
-        log(
-          `Failed on post ${post.id}: ${result?.error || "Unknown error"}`,
-          "error"
+
+        if (result.success) {
+          log(`Favorited post ${post.id}.`);
+          success++;
+        } else {
+          log(`Failed to favorite post ${post.id}: ${result.error}`, "error");
+          fail++;
+        }
+      } else if (mode === "remove") {
+        if (!post.is_favorited) {
+          log(`Skipping ${post.id}, not in favorites.`, "warn");
+          skipped++;
+          continue;
+        }
+
+        const result = await apiRequest(
+          `favorites.json?post_id=${post.id}`,
+          credentials,
+          { method: "DELETE" }
         );
+
+        if (result.success) {
+          log(`Removed post ${post.id} from favorites.`);
+          success++;
+        } else {
+          log(`Failed to remove post ${post.id}: ${result.error}`, "error");
+          fail++;
+        }
       }
 
-      updateProgress(((i + 1) / targets.length) * 100);
-
-      // Safe delay to avoid burst limits
-      await new Promise((r) => setTimeout(900 + Math.random() * 400));
+      updateProgress(((index + 1) / posts.length) * 100);
+      await new Promise((r) => setTimeout(r, 500));
     }
 
-    log(`Done. Success: ${success}, Failed: ${fail}, Skipped: ${skipped}`);
-    updateProgress(100, "Done");
+    log(`Done! Success: ${success}, Skipped: ${skipped}, Failed: ${fail}`);
     button.disabled = false;
+    updateProgress(100, "Completed!");
   }
 }
 
-/* =========================
-   Router-required exports
-   ========================= */
-
-export const render = () => {
-  return renderSharedForm({
+export const render = () =>
+  renderSharedForm({
     title: "Mass Favorite Tool",
-    description: "Favorite posts in bulk or remove blacklisted favorites.",
-    actionButtonText: "Run Mass Favorite",
+    description:
+      "Favorite posts in bulk or remove fetched posts from your favorites.",
+    actionButtonText: "Start",
     actionButtonColor: "bg-pink-600",
     actionButtonHoverColor: "hover:bg-pink-700",
     maxPostLimit: 320,
+    extraUI: `<select id="favorite-mode" class="editor-input mb-3">
+                <option value="favorite">Mass Favorite (filtered)</option>
+                <option value="remove">Remove from Favorites</option>
+              </select>`,
   });
-};
 
 export const afterRender = () => {
   new MassFavoriteTool();
